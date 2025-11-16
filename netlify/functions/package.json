@@ -1,0 +1,9 @@
+{
+  "name": "blendiq-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for BlendIQ",
+  "private": true,
+  "dependencies": {
+    "@netlify/functions": "^2.4.0"
+  }
+}
