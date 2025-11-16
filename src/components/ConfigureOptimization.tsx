@@ -97,10 +97,10 @@ export default function ConfigureOptimization({
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-navy-700 mb-2">Configure Optimisation</h1>
-        <p className="text-gray-600">
+    <div className="max-w-4xl mx-auto slide-in">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-navy-700 mb-2">Configure Optimisation</h1>
+        <p className="text-sm sm:text-base text-gray-600">
           Set tolerance levels and constraints for your soil blend optimisation.
         </p>
       </div>
@@ -216,10 +216,10 @@ export default function ConfigureOptimization({
                   return (
                     <div
                       key={material.id}
-                      className="grid grid-cols-4 gap-3 p-3 bg-gray-50 rounded border border-gray-200"
+                      className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-3 p-3 bg-gray-50 rounded-lg border-2 border-gray-200 hover:border-navy-300 transition-colors"
                     >
-                      <div className="col-span-1">
-                        <p className="text-sm font-medium text-gray-900">{material.name}</p>
+                      <div className="sm:col-span-1">
+                        <p className="text-xs sm:text-sm font-medium text-gray-900">{material.name}</p>
                       </div>
                       <div>
                         <label className="block text-xs text-gray-600 mb-1">Min %</label>
@@ -285,18 +285,18 @@ export default function ConfigureOptimization({
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between">
-        <button onClick={onBack} className="btn btn-secondary px-6 py-3">
-          ← Back
+      <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
+        <button onClick={onBack} className="btn btn-secondary px-6 py-3 w-full sm:w-auto order-2 sm:order-1">
+          <span>← Back</span>
         </button>
         <button
           onClick={onOptimize}
           disabled={config.selectedParameters.length === 0}
-          className={`btn btn-primary px-8 py-3 text-lg ${
+          className={`btn btn-primary px-6 sm:px-8 py-3 text-base sm:text-lg w-full sm:w-auto order-1 sm:order-2 ${
             config.selectedParameters.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >
-          Optimise Blend →
+          <span>Optimise Blend →</span>
         </button>
       </div>
 

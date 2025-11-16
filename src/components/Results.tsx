@@ -130,10 +130,10 @@ export default function Results({ result, materials, config, onBack, onStartNew 
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-navy-700 mb-2">Optimisation Results</h1>
-        <p className="text-gray-600">
+    <div className="max-w-6xl mx-auto slide-in">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-navy-700 mb-2">Optimisation Results</h1>
+        <p className="text-sm sm:text-base text-gray-600">
           Review your optimised soil blend and export the results.
         </p>
       </div>
@@ -183,19 +183,19 @@ export default function Results({ result, materials, config, onBack, onStartNew 
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
         {/* Blend Composition */}
         <div className="card">
-          <h2 className="text-xl font-semibold text-navy-700 mb-4">Blend Composition</h2>
-          <ResponsiveContainer width="100%" height={300}>
+          <h2 className="text-lg sm:text-xl font-semibold text-navy-700 mb-4">Blend Composition</h2>
+          <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie
                 data={pieData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, value }) => `${name}: ${value.toFixed(1)}%`}
-                outerRadius={100}
+                label={({ name, value }) => window.innerWidth > 640 ? `${name}: ${value.toFixed(1)}%` : `${value.toFixed(1)}%`}
+                outerRadius={window.innerWidth > 640 ? 100 : 80}
                 fill="#8884d8"
                 dataKey="value"
               >
@@ -204,14 +204,14 @@ export default function Results({ result, materials, config, onBack, onStartNew 
                 ))}
               </Pie>
               <Tooltip formatter={(value: number) => `${value.toFixed(2)}%`} />
-              <Legend />
+              <Legend wrapperStyle={{ fontSize: window.innerWidth > 640 ? '14px' : '12px' }} />
             </PieChart>
           </ResponsiveContainer>
         </div>
 
         {/* Compliance Summary */}
         <div className="card">
-          <h2 className="text-xl font-semibold text-navy-700 mb-4">Compliance Summary</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-navy-700 mb-4">Compliance Summary</h2>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-gray-700">Total Parameters:</span>
@@ -248,28 +248,28 @@ export default function Results({ result, materials, config, onBack, onStartNew 
 
       {/* Tonnage Breakdown */}
       <div className="card mb-6">
-        <h2 className="text-xl font-semibold text-navy-700 mb-4">Tonnage Breakdown</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <h2 className="text-lg sm:text-xl font-semibold text-navy-700 mb-4">Tonnage Breakdown</h2>
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <table className="w-full min-w-[640px]">
             <thead className="bg-navy-600 text-white">
               <tr>
-                <th className="px-4 py-3 text-left">Material</th>
-                <th className="px-4 py-3 text-right">Available</th>
-                <th className="px-4 py-3 text-right">Used</th>
-                <th className="px-4 py-3 text-right">Remaining</th>
-                <th className="px-4 py-3 text-right">Percentage</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm">Material</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm">Available</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm">Used</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm">Remaining</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm">Percentage</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {result.tonnageBreakdown.map((tb, i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{tb.materialName}</td>
-                  <td className="px-4 py-3 text-right">{tb.available.toFixed(2)} tonnes</td>
-                  <td className="px-4 py-3 text-right font-semibold">{tb.used.toFixed(2)} tonnes</td>
-                  <td className="px-4 py-3 text-right">{tb.remaining.toFixed(2)} tonnes</td>
-                  <td className="px-4 py-3 text-right">
+                <tr key={i} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-3 sm:px-4 py-2 sm:py-3 font-medium text-xs sm:text-sm">{tb.materialName}</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm">{tb.available.toFixed(2)} t</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3 text-right font-semibold text-xs sm:text-sm">{tb.used.toFixed(2)} t</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm">{tb.remaining.toFixed(2)} t</td>
+                  <td className="px-3 sm:px-4 py-2 sm:py-3 text-right">
                     <span
-                      className="inline-block px-2 py-1 rounded text-sm font-medium"
+                      className="inline-block px-2 py-1 rounded text-xs font-medium shadow-md"
                       style={{ backgroundColor: COLORS[i % COLORS.length], color: '#fff' }}
                     >
                       {tb.percentage.toFixed(1)}%
@@ -285,9 +285,9 @@ export default function Results({ result, materials, config, onBack, onStartNew 
       {/* Soil Texture Triangle */}
       {result.soilTexture && (
         <div className="card mb-6">
-          <h2 className="text-xl font-semibold text-navy-700 mb-4">Soil Texture Analysis</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>{soilTexturePlot}</div>
+          <h2 className="text-lg sm:text-xl font-semibold text-navy-700 mb-4">Soil Texture Analysis</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="min-h-[300px]">{soilTexturePlot}</div>
             <div className="flex flex-col justify-center">
               <div className="space-y-3">
                 <div className="flex justify-between">
@@ -323,13 +323,13 @@ export default function Results({ result, materials, config, onBack, onStartNew 
 
       {/* Parameter Residuals */}
       <div className="card mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-navy-700">Parameter Residuals</h2>
-          <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold text-navy-700">Parameter Residuals</h2>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as any)}
-              className="px-3 py-1.5 border border-gray-300 rounded text-sm"
+              className="px-3 py-1.5 border-2 border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-navy-500"
             >
               <option value="all">All Status</option>
               <option value="marginal">Marginal Only</option>
@@ -338,7 +338,7 @@ export default function Results({ result, materials, config, onBack, onStartNew 
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="px-3 py-1.5 border border-gray-300 rounded text-sm"
+              className="px-3 py-1.5 border-2 border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-navy-500"
             >
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
@@ -349,8 +349,8 @@ export default function Results({ result, materials, config, onBack, onStartNew 
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <table className="w-full text-xs sm:text-sm min-w-[640px]">
             <thead className="bg-navy-600 text-white">
               <tr>
                 <th className="px-3 py-2 text-left">Parameter</th>
@@ -423,31 +423,65 @@ export default function Results({ result, materials, config, onBack, onStartNew 
       </div>
 
       {/* Actions */}
-      <div className="flex justify-between items-center">
-        <button onClick={onBack} className="btn btn-secondary flex items-center gap-2">
-          <ArrowLeft className="w-4 h-4" />
-          Adjust & Re-optimise
-        </button>
-
-        <div className="flex gap-3">
-          <button onClick={handleExportJSON} className="btn btn-secondary flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            Export JSON
-          </button>
-          <button onClick={handleExportCSV} className="btn btn-secondary flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            Export CSV
-          </button>
-          <button onClick={handleExportPDF} className="btn btn-primary flex items-center gap-2">
+      <div className="flex flex-col gap-4">
+        {/* Mobile: Stack buttons vertically */}
+        <div className="flex flex-col sm:hidden gap-3">
+          <button onClick={handleExportPDF} className="btn btn-primary flex items-center justify-center gap-2 w-full">
             <FileText className="w-4 h-4" />
-            Export PDF Report
+            <span>Export PDF Report</span>
+          </button>
+          <div className="grid grid-cols-2 gap-3">
+            <button onClick={handleExportJSON} className="btn btn-secondary flex items-center justify-center gap-2 text-xs">
+              <Download className="w-3 h-3" />
+              <span>JSON</span>
+            </button>
+            <button onClick={handleExportCSV} className="btn btn-secondary flex items-center justify-center gap-2 text-xs">
+              <Download className="w-3 h-3" />
+              <span>CSV</span>
+            </button>
+          </div>
+          <button onClick={onBack} className="btn btn-secondary flex items-center justify-center gap-2 w-full">
+            <ArrowLeft className="w-4 h-4" />
+            <span>Adjust & Re-optimise</span>
+          </button>
+          <button onClick={onStartNew} className="btn btn-secondary flex items-center justify-center gap-2 w-full">
+            <RotateCcw className="w-4 h-4" />
+            <span>Start New Blend</span>
           </button>
         </div>
 
-        <button onClick={onStartNew} className="btn btn-secondary flex items-center gap-2">
-          <RotateCcw className="w-4 h-4" />
-          Start New Blend
-        </button>
+        {/* Desktop: Original layout */}
+        <div className="hidden sm:flex justify-between items-center">
+          <button onClick={onBack} className="btn btn-secondary flex items-center gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden lg:inline">Adjust & Re-optimise</span>
+            <span className="lg:hidden">Adjust</span>
+          </button>
+
+          <div className="flex gap-2 lg:gap-3">
+            <button onClick={handleExportJSON} className="btn btn-secondary flex items-center gap-2 text-xs lg:text-sm">
+              <Download className="w-4 h-4" />
+              <span className="hidden lg:inline">Export JSON</span>
+              <span className="lg:hidden">JSON</span>
+            </button>
+            <button onClick={handleExportCSV} className="btn btn-secondary flex items-center gap-2 text-xs lg:text-sm">
+              <Download className="w-4 h-4" />
+              <span className="hidden lg:inline">Export CSV</span>
+              <span className="lg:hidden">CSV</span>
+            </button>
+            <button onClick={handleExportPDF} className="btn btn-primary flex items-center gap-2 text-xs lg:text-sm">
+              <FileText className="w-4 h-4" />
+              <span className="hidden lg:inline">Export PDF Report</span>
+              <span className="lg:hidden">PDF</span>
+            </button>
+          </div>
+
+          <button onClick={onStartNew} className="btn btn-secondary flex items-center gap-2">
+            <RotateCcw className="w-4 h-4" />
+            <span className="hidden lg:inline">Start New Blend</span>
+            <span className="lg:hidden">New</span>
+          </button>
+        </div>
       </div>
     </div>
   );

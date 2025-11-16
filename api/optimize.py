@@ -263,12 +263,16 @@ def calculate_objective(ratios, material_params, targets, limits, config):
         if blend_value is None or np.isnan(blend_value):
             continue
 
+        # Ensure target_value is never None
+        if target_value is None:
+            target_value = 0
+
         param_limits = limits.get(param_name, {})
         lower = param_limits.get('lower')
         upper = param_limits.get('upper')
 
         # Use safe divisor to handle None or zero target values
-        safe_divisor = target_value if (target_value is not None and target_value != 0) else 1
+        safe_divisor = abs(target_value) if (target_value is not None and abs(target_value) > 1e-10) else 1.0
 
         if lower is not None and blend_value < lower:
             residual = (lower - blend_value) / safe_divisor
@@ -312,6 +316,10 @@ def calculate_residuals(blend_params, targets, limits, config):
 
     for param_name, blend_value in blend_params.items():
         target = targets.get(param_name, 0)
+        # Ensure target is never None
+        if target is None:
+            target = 0
+
         param_limits = limits.get(param_name, {})
 
         lower = param_limits.get('lower')
@@ -325,7 +333,7 @@ def calculate_residuals(blend_params, targets, limits, config):
             residual = blend_value - target
 
         # Use safe divisor to handle None or zero target values
-        safe_divisor = target if (target is not None and target != 0) else 1
+        safe_divisor = abs(target) if (target is not None and abs(target) > 1e-10) else 1.0
         residual_percent = abs(residual / safe_divisor) * 100
 
         if residual_percent <= tolerance:
@@ -390,12 +398,18 @@ def build_result(success, ratios, materials, residuals, blend_params, iterations
 
     soil_texture = None
     if 'Clay' in blend_params and 'Silt' in blend_params and 'Sand' in blend_params:
-        clay = blend_params['Clay']
-        silt = blend_params['Silt']
-        sand = blend_params['Sand']
+        clay = blend_params.get('Clay', 0)
+        silt = blend_params.get('Silt', 0)
+        sand = blend_params.get('Sand', 0)
+
+        # Ensure values are not None
+        clay = clay if clay is not None else 0
+        silt = silt if silt is not None else 0
+        sand = sand if sand is not None else 0
+
         total = clay + silt + sand
 
-        if total > 0:
+        if total > 1e-10:  # Use small epsilon to avoid division by near-zero
             clay_pct = (clay / total) * 100
             silt_pct = (silt / total) * 100
             sand_pct = (sand / total) * 100

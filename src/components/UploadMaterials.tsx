@@ -109,10 +109,10 @@ export default function UploadMaterials({
   const detectedParams = materials.length > 0 ? countDetectedParameters(materials) : 0;
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-navy-700 mb-2">Upload Materials</h1>
-        <p className="text-gray-600">
+    <div className="max-w-4xl mx-auto slide-in">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-navy-700 mb-2">Upload Materials</h1>
+        <p className="text-sm sm:text-base text-gray-600">
           Upload PDFs or CSVs of laboratory reports to begin optimising your soil blend.
         </p>
       </div>
@@ -186,28 +186,28 @@ export default function UploadMaterials({
       {/* Materials List */}
       {materials.length > 0 && (
         <div className="card">
-          <h2 className="text-xl font-semibold text-navy-700 mb-4">Materials ({materials.length})</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-navy-700 mb-4">Materials ({materials.length})</h2>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {materials.map((material) => (
               <div
                 key={material.id}
-                className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200"
+                className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg border-2 border-gray-200 hover:border-navy-400 transition-all duration-300 hover:shadow-md"
               >
-                <FileText className="w-6 h-6 text-navy-500 flex-shrink-0 mt-1" />
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-navy-500 flex-shrink-0 mt-1" />
 
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">{material.name}</h3>
-                  <p className="text-sm text-gray-600">
+                <div className="flex-1 min-w-0 w-full sm:w-auto">
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{material.name}</h3>
+                  <p className="text-xs sm:text-sm text-gray-600">
                     {Object.keys(material.parameters).length} parameters detected
                   </p>
                   {material.source && (
-                    <p className="text-xs text-gray-500 mt-1">Source: {material.source}</p>
+                    <p className="text-xs text-gray-500 mt-1 truncate">Source: {material.source}</p>
                   )}
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div>
+                <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                  <div className="flex-1 sm:flex-none">
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Available Tonnage
                     </label>
@@ -219,17 +219,17 @@ export default function UploadMaterials({
                       onChange={(e) =>
                         handleTonnageChange(material.id, parseFloat(e.target.value) || 0)
                       }
-                      className="w-32 px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
+                      className="w-full sm:w-32 px-3 py-1.5 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-navy-500 transition-all"
                       placeholder="0.0"
                     />
                   </div>
 
                   <button
                     onClick={() => handleRemoveMaterial(material.id)}
-                    className="text-red-600 hover:text-red-700 p-2"
+                    className="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors self-end sm:self-auto"
                     title="Remove material"
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                 </div>
               </div>
@@ -239,21 +239,22 @@ export default function UploadMaterials({
       )}
 
       {/* Next Button */}
-      <div className="mt-8 flex justify-end">
+      <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-end gap-3">
         <button
           onClick={onNext}
           disabled={!canProceed}
           className={`
-            btn btn-primary px-8 py-3 text-lg
+            btn btn-primary px-6 sm:px-8 py-3 text-base sm:text-lg w-full sm:w-auto
             ${!canProceed ? 'opacity-50 cursor-not-allowed' : ''}
           `}
         >
-          Continue to Configuration →
+          <span>Continue to Configuration</span>
+          <span className="ml-2">→</span>
         </button>
       </div>
 
       {!canProceed && materials.length > 0 && (
-        <p className="text-sm text-amber-600 text-right mt-2">
+        <p className="text-xs sm:text-sm text-amber-600 text-center sm:text-right mt-2">
           Please enter available tonnage for all materials to continue
         </p>
       )}
