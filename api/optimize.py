@@ -267,12 +267,15 @@ def calculate_objective(ratios, material_params, targets, limits, config):
         lower = param_limits.get('lower')
         upper = param_limits.get('upper')
 
+        # Use safe divisor to handle None or zero target values
+        safe_divisor = target_value if (target_value is not None and target_value != 0) else 1
+
         if lower is not None and blend_value < lower:
-            residual = (lower - blend_value) / (target_value if target_value != 0 else 1)
+            residual = (lower - blend_value) / safe_divisor
         elif upper is not None and blend_value > upper:
-            residual = (blend_value - upper) / (target_value if target_value != 0 else 1)
+            residual = (blend_value - upper) / safe_divisor
         else:
-            residual = (blend_value - target_value) / (target_value if target_value != 0 else 1)
+            residual = (blend_value - target_value) / safe_divisor
 
         if abs(residual) > tolerance:
             total_error += (residual ** 2) * 10
@@ -321,7 +324,9 @@ def calculate_residuals(blend_params, targets, limits, config):
         else:
             residual = blend_value - target
 
-        residual_percent = abs(residual / (target if target != 0 else 1)) * 100
+        # Use safe divisor to handle None or zero target values
+        safe_divisor = target if (target is not None and target != 0) else 1
+        residual_percent = abs(residual / safe_divisor) * 100
 
         if residual_percent <= tolerance:
             status = 'compliant'
