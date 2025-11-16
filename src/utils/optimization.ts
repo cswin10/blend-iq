@@ -52,6 +52,13 @@ export async function optimizeBlend(
       throw new Error(errorMessage);
     }
 
+    // Also check content-type for successful responses
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const textResponse = await response.text();
+      throw new Error(`Server returned non-JSON response: ${textResponse.substring(0, 200)}`);
+    }
+
     const result: OptimizationResult = await response.json();
     return result;
   } catch (error: any) {
