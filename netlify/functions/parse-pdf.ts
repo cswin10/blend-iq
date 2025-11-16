@@ -30,34 +30,35 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    // Get Claude API key from environment
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    // Get OpenAI API key from environment
+    const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
-      throw new Error('ANTHROPIC_API_KEY not configured');
+      throw new Error('OPENAI_API_KEY not configured');
     }
 
-    // Call Claude API with PDF
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Call OpenAI GPT-4 API with PDF as base64 image
+    // Note: OpenAI doesn't natively support PDF, so we send it as a data URL
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 4096,
+        model: 'gpt-4o',
         messages: [
+          {
+            role: 'system',
+            content: 'You are an expert at extracting structured data from laboratory reports. Always return valid JSON only, with no additional text or markdown formatting.',
+          },
           {
             role: 'user',
             content: [
               {
-                type: 'document',
-                source: {
-                  type: 'base64',
-                  media_type: 'application/pdf',
-                  data: pdfBase64,
+                type: 'image_url',
+                image_url: {
+                  url: `data:application/pdf;base64,${pdfBase64}`,
                 },
               },
               {
@@ -86,34 +87,44 @@ Important:
 - Be precise with units (mg/kg, %, w/w, etc.)
 - If multiple samples are present, create separate entries for each
 
-Return ONLY valid JSON, no other text.`,
+Return ONLY valid JSON, no other text or markdown code blocks.`,
               },
             ],
           },
         ],
+        max_tokens: 4096,
+        temperature: 0.1,
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(`Claude API error: ${error}`);
+      throw new Error(`OpenAI API error: ${error}`);
     }
 
     const data = await response.json();
-    const extractedText = data.content[0].text;
+    const extractedText = data.choices[0].message.content;
 
-    // Parse the JSON from Claude's response
+    // Parse the JSON from GPT-4's response
     let parsedData;
     try {
+      // Remove markdown code blocks if present
+      let jsonText = extractedText.trim();
+      if (jsonText.startsWith('```json')) {
+        jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      } else if (jsonText.startsWith('```')) {
+        jsonText = jsonText.replace(/```\n?/g, '');
+      }
+
       // Try to extract JSON from the response
-      const jsonMatch = extractedText.match(/\{[\s\S]*\}/);
+      const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         parsedData = JSON.parse(jsonMatch[0]);
       } else {
         throw new Error('No JSON found in response');
       }
     } catch (parseError) {
-      throw new Error(`Failed to parse Claude response: ${extractedText}`);
+      throw new Error(`Failed to parse GPT-4 response: ${extractedText}`);
     }
 
     // Convert to Material format
