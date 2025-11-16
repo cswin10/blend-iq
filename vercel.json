@@ -6,16 +6,12 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-  "functions": {
-    "api/**/*.py": {
-      "runtime": "python3.11"
-    },
-    "api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  }
+  ]
 }
