@@ -1,5 +1,5 @@
 import { Handler } from '@netlify/functions';
-import { spawn } from 'child_process';
+import { PythonShell } from 'python-shell';
 import path from 'path';
 
 interface OptimizationRequest {
@@ -67,42 +67,43 @@ export const handler: Handler = async (event) => {
 
 async function runPythonOptimization(materials: any[], config: any): Promise<any> {
   return new Promise((resolve, reject) => {
-    const pythonScript = path.join(process.cwd(), 'netlify', 'functions', 'optimizer.py');
+    const pythonScript = path.join(__dirname, 'optimizer.py');
 
-    const python = spawn('python3', [pythonScript]);
+    const options = {
+      mode: 'json' as const,
+      pythonPath: process.env.PYTHON_PATH || 'python3',
+      pythonOptions: ['-u'],
+      scriptPath: path.dirname(pythonScript),
+      args: [],
+    };
 
-    let outputData = '';
-    let errorData = '';
+    const pyshell = new PythonShell('optimizer.py', options);
 
-    // Send input data to Python script
-    python.stdin.write(JSON.stringify({ materials, config }));
-    python.stdin.end();
+    // Send input data to Python
+    pyshell.send(JSON.stringify({ materials, config }));
 
-    python.stdout.on('data', (data) => {
-      outputData += data.toString();
+    let result: any = null;
+
+    pyshell.on('message', (message: any) => {
+      result = message;
     });
 
-    python.stderr.on('data', (data) => {
-      errorData += data.toString();
-      console.error('Python stderr:', data.toString());
-    });
-
-    python.on('close', (code) => {
-      if (code !== 0) {
-        reject(new Error(`Python script exited with code ${code}: ${errorData}`));
+    pyshell.end((err, code, signal) => {
+      if (err) {
+        reject(new Error(`Python execution failed: ${err.message}`));
         return;
       }
 
-      try {
-        const result = JSON.parse(outputData);
-        resolve(result);
-      } catch (error) {
-        reject(new Error('Failed to parse Python output'));
+      if (code !== 0) {
+        reject(new Error(`Python script exited with code ${code}`));
+        return;
       }
-    });
 
-    python.on('error', (error) => {
-      reject(new Error(`Failed to start Python process: ${error.message}`));
+      if (result) {
+        resolve(result);
+      } else {
+        reject(new Error('No result from Python script'));
+      }
     });
   });
 }
