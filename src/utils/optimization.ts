@@ -35,15 +35,33 @@ export async function optimizeBlend(
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Optimization failed');
+      // Try to parse error as JSON, fallback to text if it fails
+      let errorMessage = 'Optimization failed';
+      try {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const error = await response.json();
+          errorMessage = error.message || errorMessage;
+        } else {
+          const errorText = await response.text();
+          errorMessage = `Server error (${response.status}): ${errorText.substring(0, 200)}`;
+        }
+      } catch (parseError) {
+        errorMessage = `Server error (${response.status}): Unable to parse error response`;
+      }
+      throw new Error(errorMessage);
     }
 
     const result: OptimizationResult = await response.json();
     return result;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Optimization error:', error);
-    throw error;
+    // If it's already an Error object, rethrow it
+    if (error instanceof Error) {
+      throw error;
+    }
+    // Otherwise, wrap it in an Error
+    throw new Error(error?.message || 'An unexpected error occurred during optimization');
   }
 }
 

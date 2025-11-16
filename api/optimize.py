@@ -29,7 +29,16 @@ class handler(BaseHTTPRequestHandler):
             config = data.get('config')
 
             if not materials or not config:
-                self.send_error(400, 'Missing required parameters')
+                # Return JSON error instead of HTML error page
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                error_response = {
+                    'success': False,
+                    'message': 'Missing required parameters: materials and config are required'
+                }
+                self.wfile.write(json.dumps(error_response).encode('utf-8'))
                 return
 
             # Run optimization
@@ -42,14 +51,31 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(result).encode('utf-8'))
 
+        except json.JSONDecodeError as e:
+            # Handle JSON parsing errors specifically
+            self.send_response(400)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            error_response = {
+                'success': False,
+                'message': f'Invalid JSON in request body: {str(e)}'
+            }
+            self.wfile.write(json.dumps(error_response).encode('utf-8'))
         except Exception as e:
+            # Handle all other errors
+            import traceback
+            error_traceback = traceback.format_exc()
+
             self.send_response(500)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             error_response = {
                 'success': False,
-                'message': str(e)
+                'message': str(e),
+                'type': type(e).__name__,
+                'traceback': error_traceback if os.environ.get('DEBUG') else None
             }
             self.wfile.write(json.dumps(error_response).encode('utf-8'))
 
