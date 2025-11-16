@@ -105,19 +105,6 @@ export default function UploadMaterials({
     );
   };
 
-  const handleAddManualMaterial = () => {
-    const newMaterial: Material = {
-      id: `mat-${Date.now()}-manual`,
-      name: `Manual Entry ${materials.length + 1}`,
-      availableTonnage: 0,
-      parameters: {},
-      source: 'Manual Entry',
-    };
-
-    onMaterialsChange([...materials, newMaterial]);
-    setShowManualEntry(false);
-  };
-
   const canProceed = materials.length >= 2 && materials.every((m) => m.availableTonnage > 0);
   const detectedParams = materials.length > 0 ? countDetectedParameters(materials) : 0;
 
