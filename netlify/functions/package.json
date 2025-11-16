@@ -4,6 +4,7 @@
   "description": "Netlify Functions for BlendIQ",
   "private": true,
   "dependencies": {
-    "@netlify/functions": "^2.4.0"
+    "@netlify/functions": "^2.4.0",
+    "python-shell": "^5.0.0"
   }
 }

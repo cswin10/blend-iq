@@ -16,14 +16,14 @@ import {
 
 /**
  * Main optimization function
- * Calls the Netlify function to run Python SciPy optimization
+ * Calls the API endpoint to run Python SciPy optimization
  */
 export async function optimizeBlend(
   materials: Material[],
   config: OptimizationConfig
 ): Promise<OptimizationResult> {
   try {
-    const response = await fetch('/.netlify/functions/optimize', {
+    const response = await fetch('/api/optimize', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
