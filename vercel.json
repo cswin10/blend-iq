@@ -17,8 +17,5 @@
     "api/**/*.ts": {
       "runtime": "nodejs18.x"
     }
-  },
-  "env": {
-    "OPENAI_API_KEY": "@openai_api_key"
   }
 }
