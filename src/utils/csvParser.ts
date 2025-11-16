@@ -48,7 +48,6 @@ type CSVFormat = 'horizontal' | 'vertical' | 'multi-material';
 
 function detectCSVFormat(data: string[][]): CSVFormat {
   const firstRow = data[0];
-  const secondRow = data[1] || [];
 
   // Check if first row has parameter names
   const hasParameterHeaders = firstRow.some((cell) =>

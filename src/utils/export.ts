@@ -6,8 +6,8 @@ import { OptimizationResult, Material, OptimizationConfig, ExportData } from '..
  * Export results as PDF (Declaration of Compliance format)
  */
 export function exportToPDF(
-  materials: Material[],
-  config: OptimizationConfig,
+  _materials: Material[],
+  _config: OptimizationConfig,
   result: OptimizationResult
 ): void {
   const doc = new jsPDF();
@@ -243,8 +243,8 @@ export function exportToPDF(
  * Export results as CSV
  */
 export function exportToCSV(
-  materials: Material[],
-  config: OptimizationConfig,
+  _materials: Material[],
+  _config: OptimizationConfig,
   result: OptimizationResult
 ): void {
   let csv = 'BlendIQ Soil Blend Analysis\n';
