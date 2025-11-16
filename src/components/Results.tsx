@@ -44,60 +44,62 @@ export default function Results({ result, materials, config, onBack, onStartNew 
   // Prepare soil texture triangle data
   const soilTexturePlot = result.soilTexture ? (
     <Plot
-      data={[
-        // Acceptable range (shaded area)
-        {
-          type: 'scatterternary' as any,
-          mode: 'lines',
-          a: [
-            SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.min,
-            SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.max,
-            SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.max,
-            SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.min,
-            SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.min,
-          ],
-          b: [
-            SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.min,
-            SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.min,
-            SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.max,
-            SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.max,
-            SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.min,
-          ],
-          c: [
-            100 - SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.min - SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.min,
-            100 - SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.max - SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.min,
-            100 - SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.max - SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.max,
-            100 - SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.min - SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.max,
-            100 - SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.min - SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.min,
-          ],
-          fill: 'toself',
-          fillcolor: 'rgba(0, 102, 204, 0.2)',
-          line: { color: '#0066cc', width: 2 },
-          name: 'BS3882 Acceptable Range',
-          hoverinfo: 'skip',
-        },
-        // Blend point
-        {
-          type: 'scatterternary' as any,
-          mode: 'markers',
-          a: [result.soilTexture.clay],
-          b: [result.soilTexture.silt],
-          c: [result.soilTexture.sand],
-          marker: {
-            symbol: 'circle',
-            size: 12,
-            color: result.soilTexture.withinAcceptableRange ? '#00cc00' : '#ff0000',
-            line: { color: '#fff', width: 2 },
+      data={
+        [
+          // Acceptable range (shaded area)
+          {
+            type: 'scatterternary',
+            mode: 'lines',
+            a: [
+              SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.min,
+              SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.max,
+              SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.max,
+              SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.min,
+              SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.min,
+            ],
+            b: [
+              SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.min,
+              SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.min,
+              SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.max,
+              SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.max,
+              SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.min,
+            ],
+            c: [
+              100 - SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.min - SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.min,
+              100 - SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.max - SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.min,
+              100 - SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.max - SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.max,
+              100 - SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.min - SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.max,
+              100 - SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.min - SOIL_TEXTURE_ACCEPTABLE_RANGE.silt.min,
+            ],
+            fill: 'toself',
+            fillcolor: 'rgba(0, 102, 204, 0.2)',
+            line: { color: '#0066cc', width: 2 },
+            name: 'BS3882 Acceptable Range',
+            hoverinfo: 'skip',
           },
-          name: 'Blend',
-          text: [
-            `Clay: ${result.soilTexture.clay.toFixed(1)}%<br>` +
-            `Silt: ${result.soilTexture.silt.toFixed(1)}%<br>` +
-            `Sand: ${result.soilTexture.sand.toFixed(1)}%`,
-          ],
-          hoverinfo: 'text',
-        },
-      ]}
+          // Blend point
+          {
+            type: 'scatterternary',
+            mode: 'markers',
+            a: [result.soilTexture.clay],
+            b: [result.soilTexture.silt],
+            c: [result.soilTexture.sand],
+            marker: {
+              symbol: 'circle',
+              size: 12,
+              color: result.soilTexture.withinAcceptableRange ? '#00cc00' : '#ff0000',
+              line: { color: '#fff', width: 2 },
+            },
+            name: 'Blend',
+            text: [
+              `Clay: ${result.soilTexture.clay.toFixed(1)}%<br>` +
+              `Silt: ${result.soilTexture.silt.toFixed(1)}%<br>` +
+              `Sand: ${result.soilTexture.sand.toFixed(1)}%`,
+            ],
+            hoverinfo: 'text',
+          },
+        ] as any
+      }
       layout={{
         ternary: {
           sum: 100,
