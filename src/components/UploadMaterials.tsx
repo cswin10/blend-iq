@@ -31,7 +31,7 @@ export default function UploadMaterials({
 
       for (const file of Array.from(files)) {
         if (file.type === 'application/pdf') {
-          // Parse PDF using Claude API
+          // Parse PDF using OpenAI GPT-4o API
           const pdfMaterial = await parsePDF(file);
           newMaterials.push(pdfMaterial);
         } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
