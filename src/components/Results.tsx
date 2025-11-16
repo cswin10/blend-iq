@@ -47,7 +47,7 @@ export default function Results({ result, materials, config, onBack, onStartNew 
       data={[
         // Acceptable range (shaded area)
         {
-          type: 'scatterternary',
+          type: 'scatterternary' as any,
           mode: 'lines',
           a: [
             SOIL_TEXTURE_ACCEPTABLE_RANGE.clay.min,
@@ -78,7 +78,7 @@ export default function Results({ result, materials, config, onBack, onStartNew 
         },
         // Blend point
         {
-          type: 'scatterternary',
+          type: 'scatterternary' as any,
           mode: 'markers',
           a: [result.soilTexture.clay],
           b: [result.soilTexture.silt],
