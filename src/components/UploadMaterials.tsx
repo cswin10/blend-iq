@@ -63,7 +63,7 @@ export default function UploadMaterials({
           const base64 = e.target?.result as string;
           const pdfBase64 = base64.split(',')[1]; // Remove data:application/pdf;base64,
 
-          const response = await fetch('/.netlify/functions/parse-pdf', {
+          const response = await fetch('/api/parse-pdf', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
