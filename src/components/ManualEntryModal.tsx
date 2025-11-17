@@ -166,23 +166,23 @@ export default function ManualEntryModal({ onClose, onSave }: ManualEntryModalPr
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div>
-            <h2 className="text-2xl font-bold text-navy-700">Manual Material Entry</h2>
-            <p className="text-sm text-gray-600 mt-1">
+        <div className="flex items-start justify-between p-4 sm:p-6 border-b border-gray-200">
+          <div className="flex-1 pr-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-navy-700">Manual Material Entry</h2>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
               Enter material data manually when lab reports are unavailable
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
 
         {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {/* Material Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
@@ -214,30 +214,28 @@ export default function ManualEntryModal({ onClose, onSave }: ManualEntryModalPr
           </div>
 
           {/* Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showOnlyKeyParams}
-                  onChange={(e) => setShowOnlyKeyParams(e.target.checked)}
-                  className="w-4 h-4 text-navy-600 rounded focus:ring-navy-500"
-                />
-                <span className="text-sm font-medium text-gray-700">
-                  Show only key parameters ({ALL_PARAMETERS.filter(p => p.isMandatory).length} required)
-                </span>
-              </label>
-            </div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showOnlyKeyParams}
+                onChange={(e) => setShowOnlyKeyParams(e.target.checked)}
+                className="w-4 h-4 text-navy-600 rounded focus:ring-navy-500"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                Show only key parameters ({ALL_PARAMETERS.filter(p => p.isMandatory).length} required)
+              </span>
+            </label>
             <button
               onClick={handleAutoFill}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-medium"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-medium w-full sm:w-auto"
             >
               <Sparkles className="w-4 h-4" />
-              Use Typical Topsoil Values
+              <span>Use Typical Topsoil Values</span>
             </button>
           </div>
 
-          {/* Parameters Table by Category */}
+          {/* Parameters by Category - Responsive Layout */}
           <div className="space-y-6">
             {PARAMETER_CATEGORIES.map(category => {
               const params = parametersByCategory[category];
@@ -248,7 +246,9 @@ export default function ManualEntryModal({ onClose, onSave }: ManualEntryModalPr
                   <div className="bg-navy-50 px-4 py-2 border-b border-gray-200">
                     <h3 className="font-semibold text-navy-700">{category}</h3>
                   </div>
-                  <div className="overflow-x-auto">
+
+                  {/* Desktop Table View - Hidden on Mobile */}
+                  <div className="hidden md:block overflow-x-auto">
                     <table className="w-full">
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
@@ -262,7 +262,7 @@ export default function ManualEntryModal({ onClose, onSave }: ManualEntryModalPr
                             Unit
                           </th>
                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">
-                            Source (Optional)
+                            Source
                           </th>
                         </tr>
                       </thead>
@@ -312,6 +312,67 @@ export default function ManualEntryModal({ onClose, onSave }: ManualEntryModalPr
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Mobile Card View - Hidden on Desktop */}
+                  <div className="md:hidden divide-y divide-gray-200">
+                    {params.map(param => {
+                      const currentValue = parameterValues[param.name];
+                      return (
+                        <div key={param.name} className="p-4 space-y-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-900 mb-1">
+                              {param.name}
+                              {param.isMandatory && (
+                                <span className="ml-1 text-red-500" title="Required parameter">*</span>
+                              )}
+                            </label>
+                            {(param.lowerLimit !== undefined || param.upperLimit !== undefined) && (
+                              <div className="text-xs text-gray-500 mb-2">
+                                {param.lowerLimit !== undefined && `Min: ${param.lowerLimit}`}
+                                {param.lowerLimit !== undefined && param.upperLimit !== undefined && ' | '}
+                                {param.upperLimit !== undefined && `Max: ${param.upperLimit}`}
+                              </div>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Value
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={currentValue?.value ?? ''}
+                                onChange={(e) => handleParameterChange(param.name, e.target.value, param.unit)}
+                                placeholder="—"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-navy-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Unit
+                              </label>
+                              <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-700">
+                                {param.unit || '—'}
+                              </div>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                              Source (Optional)
+                            </label>
+                            <input
+                              type="text"
+                              value={parameterSources[param.name] || ''}
+                              onChange={(e) => handleSourceChange(param.name, e.target.value)}
+                              placeholder="Manual Entry"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-navy-500"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}
@@ -354,20 +415,20 @@ export default function ManualEntryModal({ onClose, onSave }: ManualEntryModalPr
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-4 p-6 border-t border-gray-200 bg-gray-50">
-          <div className="text-sm text-gray-600">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 p-4 sm:p-6 border-t border-gray-200 bg-gray-50">
+          <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
             {Object.keys(parameterValues).length} of {ALL_PARAMETERS.length} parameters entered
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <button
               onClick={onClose}
-              className="px-6 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+              className="px-4 sm:px-6 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
             >
               Cancel
             </button>
             <button
               onClick={validateAndSave}
-              className="px-6 py-2 bg-navy-600 text-white rounded-lg hover:bg-navy-700 transition-colors font-medium"
+              className="px-4 sm:px-6 py-2 bg-navy-600 text-white rounded-lg hover:bg-navy-700 transition-colors font-medium"
             >
               Add Material
             </button>
