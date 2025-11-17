@@ -462,7 +462,7 @@ export default function Results({ result, materials, config, onBack, onStartNew 
           <div>
             <h3 className="font-semibold text-gray-900">Disclaimer</h3>
             <p className="text-sm text-gray-700 mt-2">
-              ⚠️ This optimisation is based solely on laboratory data provided. Validation testing by a
+              WARNING: This optimisation is based solely on laboratory data provided. Validation testing by a
               UKAS or MCERTS accredited laboratory is strongly recommended before use.
             </p>
           </div>
