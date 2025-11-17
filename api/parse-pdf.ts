@@ -162,6 +162,8 @@ function extractMaterialData(text: string, filename: string): Material {
         cleanLine = cleanLine.replace(/\([<>]?\d*\.?\d+-?\d*\.?\d*mm\)/gi, '');
         // Remove year ranges like (2015-2024)
         cleanLine = cleanLine.replace(/\(\d{4}-\d{4}\)/g, '');
+        // Remove acceptable range patterns like "20 - 70", "5.5 - 8.5" (common in BS3882 reports)
+        cleanLine = cleanLine.replace(/\d+\.?\d*\s*-\s*\d+\.?\d*/g, '');
 
         // Extract ALL numbers from the cleaned line
         const allNumbers = cleanLine.match(/([<>]?\d+\.?\d*)/g);
