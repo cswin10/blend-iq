@@ -84,8 +84,11 @@ export default function ConfigureOptimization({
     onConfigChange({ ...config, selectedParameters: newSelected });
   };
 
-  // Auto-select mandatory parameters on mount
+  // Auto-select mandatory parameters on mount and scroll to top
   React.useEffect(() => {
+    // Scroll to top when this component loads
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     if (config.selectedParameters.length === 0) {
       const mandatoryParams = ALL_PARAMETERS.filter((p) => p.isMandatory).map((p) => p.name);
       onConfigChange({ ...config, selectedParameters: mandatoryParams });
@@ -113,40 +116,73 @@ export default function ConfigureOptimization({
         </div>
 
         {/* Tolerance Slider */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <label className="label mb-0">Tolerance</label>
+        <div className="mb-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2">
+              <label className="text-base sm:text-lg font-semibold text-navy-700 mb-0">
+                Tolerance Level
+              </label>
+              <span className="text-xs sm:text-sm text-gray-600 font-normal">
+                (How close to target values)
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Current:</span>
+              <input
+                type="number"
+                min="15"
+                max="100"
+                value={config.tolerance}
+                onChange={(e) => handleToleranceChange(parseInt(e.target.value) || DEFAULT_TOLERANCE)}
+                className="w-16 sm:w-20 px-2 sm:px-3 py-1.5 border-2 border-navy-300 rounded-lg text-sm sm:text-base font-bold text-navy-700 text-center focus:ring-2 focus:ring-navy-500 focus:border-navy-500"
+              />
+              <span className="text-sm font-medium text-navy-700">%</span>
+            </div>
+          </div>
+
+          <div className="relative mb-3">
             <input
-              type="number"
+              type="range"
               min="15"
               max="100"
+              step="5"
               value={config.tolerance}
-              onChange={(e) => handleToleranceChange(parseInt(e.target.value) || DEFAULT_TOLERANCE)}
-              className="w-20 px-3 py-1 border border-gray-300 rounded text-sm"
+              onChange={(e) => handleToleranceChange(parseInt(e.target.value))}
+              className="w-full h-3 bg-gradient-to-r from-red-200 via-yellow-200 to-green-200 rounded-lg appearance-none cursor-pointer slider-thumb"
+              style={{
+                background: `linear-gradient(to right,
+                  #fca5a5 0%,
+                  #fcd34d ${((config.tolerance - 15) / (100 - 15)) * 50}%,
+                  #86efac ${((config.tolerance - 15) / (100 - 15)) * 100}%)`
+              }}
             />
           </div>
 
-          <input
-            type="range"
-            min="15"
-            max="100"
-            step="5"
-            value={config.tolerance}
-            onChange={(e) => handleToleranceChange(parseInt(e.target.value))}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-navy-600"
-          />
-
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
-            <span>15% (Strict)</span>
-            <span>100% (Relaxed)</span>
+          <div className="flex justify-between text-xs sm:text-sm font-medium mb-3">
+            <span className="text-red-600 flex items-center gap-1">
+              <span>15%</span>
+              <span className="hidden sm:inline text-xs font-normal">(Strict)</span>
+            </span>
+            <span className="text-gray-600 flex items-center gap-1">
+              <span>50%</span>
+              <span className="hidden sm:inline text-xs font-normal">(Moderate)</span>
+            </span>
+            <span className="text-green-600 flex items-center gap-1">
+              <span>100%</span>
+              <span className="hidden sm:inline text-xs font-normal">(Relaxed)</span>
+            </span>
           </div>
 
-          <div className="mt-3 flex items-start gap-2 text-sm text-gray-600">
-            <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <p>
-              Tolerance determines how close the blend must be to target values. Lower values require
-              stricter compliance.
-            </p>
+          <div className="mt-3 flex items-start gap-2 text-xs sm:text-sm text-gray-700 bg-white/60 p-3 rounded-lg">
+            <Info className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5 text-navy-600" />
+            <div>
+              <p className="font-medium mb-1">What does tolerance mean?</p>
+              <p className="text-gray-600">
+                Tolerance controls how precisely the blend must match your target values.
+                <span className="font-medium"> Lower values (15-30%)</span> require very strict compliance—ideal for sensitive projects.
+                <span className="font-medium"> Higher values (60-100%)</span> allow more flexibility—useful when exact matches are difficult.
+              </p>
+            </div>
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, FileText, AlertTriangle, CheckCircle, XCircle, ArrowLeft, RotateCcw } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import Plot from 'react-plotly.js';
@@ -19,6 +19,11 @@ const COLORS = ['#003d5c', '#0066cc', '#00cccc', '#4da9ff', '#80c1ff', '#b3d9ff'
 export default function Results({ result, materials, config, onBack, onStartNew }: ResultsProps) {
   const [filterStatus, setFilterStatus] = useState<'all' | 'marginal' | 'exceeding'>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
+
+  // Scroll to top when results load
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   // Prepare pie chart data
   const pieData = result.tonnageBreakdown.map((tb) => ({
@@ -185,28 +190,48 @@ export default function Results({ result, materials, config, onBack, onStartNew 
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
         {/* Blend Composition */}
-        <div className="card">
+        <div className="card overflow-hidden">
           <h2 className="text-lg sm:text-xl font-semibold text-navy-700 mb-4">Blend Composition</h2>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, value }) => window.innerWidth > 640 ? `${name}: ${value.toFixed(1)}%` : `${value.toFixed(1)}%`}
-                outerRadius={window.innerWidth > 640 ? 100 : 80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {pieData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value: number) => `${value.toFixed(2)}%`} />
-              <Legend wrapperStyle={{ fontSize: window.innerWidth > 640 ? '14px' : '12px' }} />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="w-full -mx-2 sm:mx-0" style={{ height: '380px', minHeight: '380px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="42%"
+                  labelLine={true}
+                  label={({ name, value }) => {
+                    // Show shortened labels on very small screens
+                    const shortName = name.length > 15 ? name.substring(0, 12) + '...' : name;
+                    return window.innerWidth < 400 ? `${value.toFixed(1)}%` : `${shortName}: ${value.toFixed(1)}%`;
+                  }}
+                  outerRadius={window.innerWidth < 640 ? "50%" : "58%"}
+                  fill="#8884d8"
+                  dataKey="value"
+                  style={{ fontSize: window.innerWidth < 640 ? '11px' : '12px' }}
+                >
+                  {pieData.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value: number) => `${value.toFixed(2)}%`}
+                  contentStyle={{ fontSize: '12px' }}
+                />
+                <Legend
+                  verticalAlign="bottom"
+                  height={40}
+                  wrapperStyle={{
+                    fontSize: window.innerWidth < 640 ? '10px' : '12px',
+                    paddingTop: '10px',
+                    paddingLeft: window.innerWidth < 640 ? '10px' : '0px',
+                    paddingRight: window.innerWidth < 640 ? '10px' : '0px'
+                  }}
+                  iconSize={window.innerWidth < 640 ? 8 : 10}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Compliance Summary */}
