@@ -179,18 +179,36 @@ function extractMaterialData(text: string, filename: string): Material {
                   valueStr = actualValue;
                 }
               }
-              // Alternative: number might have limit in middle (e.g., "31370" = 31 + 37 + 0)
-              // Try to find a reasonable split point
-              else if (numStr.length >= 3) {
-                // For heavy metals, results are typically 0-500, so take first 1-3 digits
-                // Try first 1, 2, then 3 digits
-                for (let splitPoint = 1; splitPoint <= Math.min(3, numStr.length - 1); splitPoint++) {
-                  const candidate = parseFloat(numStr.substring(0, splitPoint));
-                  // If candidate is reasonable for this parameter (< limit), use it
-                  if (candidate > 0 && candidate < knownLimit * 2) {
-                    valueStr = candidate.toString();
-                    break;
+              // Use length-based heuristic for splitting
+              // Heavy metals are typically 1-3 digits, limits are 2-3 digits
+              else if (numStr.length >= 4) {
+                let splitPoint: number;
+
+                if (numStr.length === 4) {
+                  // Could be 1+3 or 2+2, prefer 2 digits if valid
+                  const candidate2 = parseFloat(numStr.substring(0, 2));
+                  const candidate1 = parseFloat(numStr.substring(0, 1));
+                  if (candidate2 > 0 && candidate2 <= knownLimit) {
+                    splitPoint = 2;
+                  } else if (candidate1 > 0 && candidate1 <= knownLimit) {
+                    splitPoint = 1;
+                  } else {
+                    splitPoint = 2; // default to 2
                   }
+                } else if (numStr.length === 5) {
+                  // Likely 2+3 (e.g., 39200, 26100), take first 2 digits
+                  splitPoint = 2;
+                } else if (numStr.length === 6) {
+                  // Could be 3+3 (e.g., 392450), take first 3 digits
+                  splitPoint = 3;
+                } else {
+                  // Unknown length, take first 2 digits as safe default
+                  splitPoint = Math.min(2, Math.floor(numStr.length / 2));
+                }
+
+                const candidate = parseFloat(numStr.substring(0, splitPoint));
+                if (candidate > 0 && !isNaN(candidate)) {
+                  valueStr = numStr.substring(0, splitPoint);
                 }
               }
             }
