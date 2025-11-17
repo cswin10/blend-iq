@@ -111,27 +111,28 @@ function extractMaterialData(text: string, filename: string): Material {
   };
 
   // Parameter definitions: search terms and standard names
+  // IMPORTANT: Order matters! More specific terms first to avoid false matches
   const parameterDefs = [
-    { search: ['ph'], standardName: 'pH', unit: '' },
+    { search: ['chromium (vi)', 'chromium vi', 'cr(vi)', 'cr vi'], standardName: 'Chromium (VI)', unit: 'mg/kg' },
+    { search: ['chromium (total)', 'chromium total', 'total chromium', 'chromium', 'cr'], standardName: 'Chromium (Total)', unit: 'mg/kg' },
+    { search: ['stone content', 'stones >2mm', 'stones (>2mm)', 'stones'], standardName: 'Stone Content (>2mm)', unit: '%' },
     { search: ['soil organic matter', 'organic matter', 'som'], standardName: 'Organic Matter', unit: '%' },
-    { search: ['sand'], standardName: 'Sand', unit: '%' },
-    { search: ['silt'], standardName: 'Silt', unit: '%' },
-    { search: ['clay'], standardName: 'Clay', unit: '%' },
-    { search: ['stones', 'stone content'], standardName: 'Stone Content (>2mm)', unit: '%' },
-    { search: ['total nitrogen', 'nitrogen'], standardName: 'Nitrogen', unit: '%' },
-    { search: ['phosphorus'], standardName: 'Phosphorus', unit: 'mg/L' },
-    { search: ['potassium'], standardName: 'Potassium', unit: 'mg/L' },
-    { search: ['arsenic', 'as'], standardName: 'Arsenic', unit: 'mg/kg' },
-    { search: ['cadmium', 'cd'], standardName: 'Cadmium', unit: 'mg/kg' },
-    { search: ['chromium (vi)', 'cr(vi)', 'chromium vi'], standardName: 'Chromium (VI)', unit: 'mg/kg' },
-    { search: ['chromium', 'cr'], standardName: 'Chromium (Total)', unit: 'mg/kg' },
-    { search: ['copper', 'cu'], standardName: 'Copper', unit: 'mg/kg' },
-    { search: ['lead', 'pb'], standardName: 'Lead', unit: 'mg/kg' },
-    { search: ['mercury', 'hg'], standardName: 'Mercury', unit: 'mg/kg' },
-    { search: ['nickel', 'ni'], standardName: 'Nickel', unit: 'mg/kg' },
-    { search: ['selenium', 'se'], standardName: 'Selenium', unit: 'mg/kg' },
-    { search: ['zinc', 'zn'], standardName: 'Zinc', unit: 'mg/kg' },
-    { search: ['antimony', 'sb'], standardName: 'Antimony', unit: 'mg/kg' },
+    { search: ['total nitrogen', 'nitrogen (total)'], standardName: 'Nitrogen', unit: '%' },
+    { search: ['clay (<', 'clay %', 'clay'], standardName: 'Clay', unit: '%' },
+    { search: ['silt (', 'silt %', 'silt'], standardName: 'Silt', unit: '%' },
+    { search: ['total sand', 'sand (', 'sand %', 'sand'], standardName: 'Sand', unit: '%' },
+    { search: ['ph (', 'ph'], standardName: 'pH', unit: '' },
+    { search: ['phosphorus (p2o5)', 'phosphorus p2o5', 'extractable phosphorus', 'phosphorus'], standardName: 'Phosphorus', unit: 'mg/L' },
+    { search: ['potassium (k2o)', 'potassium k2o', 'extractable potassium', 'potassium'], standardName: 'Potassium', unit: 'mg/L' },
+    { search: ['total arsenic', 'arsenic (as)', 'arsenic'], standardName: 'Arsenic', unit: 'mg/kg' },
+    { search: ['total cadmium', 'cadmium (cd)', 'cadmium'], standardName: 'Cadmium', unit: 'mg/kg' },
+    { search: ['total copper', 'copper (cu)', 'copper'], standardName: 'Copper', unit: 'mg/kg' },
+    { search: ['total lead', 'lead (pb)', 'lead'], standardName: 'Lead', unit: 'mg/kg' },
+    { search: ['total mercury', 'mercury (hg)', 'mercury'], standardName: 'Mercury', unit: 'mg/kg' },
+    { search: ['total nickel', 'nickel (ni)', 'nickel'], standardName: 'Nickel', unit: 'mg/kg' },
+    { search: ['total selenium', 'selenium (se)', 'selenium'], standardName: 'Selenium', unit: 'mg/kg' },
+    { search: ['total zinc', 'zinc (zn)', 'zinc'], standardName: 'Zinc', unit: 'mg/kg' },
+    { search: ['total antimony', 'antimony (sb)', 'antimony'], standardName: 'Antimony', unit: 'mg/kg' },
   ];
 
   // Split into lines for easier parsing
@@ -153,11 +154,39 @@ function extractMaterialData(text: string, filename: string): Material {
 
       if (matchedTerm && !parameters[param.standardName]) {
         // Found a parameter! Now extract numeric values
-        // Extract ALL numbers from the line
-        const allNumbers = line.match(/([<>]?\d+\.?\d*)/g);
+        // Clean the line: remove common non-data patterns
+        let cleanLine = line;
+        // Remove dates (dd/mm/yyyy or mm/dd/yyyy)
+        cleanLine = cleanLine.replace(/\d{1,2}\/\d{1,2}\/\d{4}/g, '');
+        // Remove particle size ranges like (0.05-2.0mm), (<0.002mm), (2-6mm)
+        cleanLine = cleanLine.replace(/\([<>]?\d*\.?\d+-?\d*\.?\d*mm\)/gi, '');
+        // Remove year ranges like (2015-2024)
+        cleanLine = cleanLine.replace(/\(\d{4}-\d{4}\)/g, '');
+
+        // Extract ALL numbers from the cleaned line
+        const allNumbers = cleanLine.match(/([<>]?\d+\.?\d*)/g);
 
         if (allNumbers && allNumbers.length > 0) {
-          let valueStr = allNumbers[0]; // Default to first number
+          // Filter to get reasonable result values (exclude very small formatting artifacts)
+          let candidateNumbers = allNumbers
+            .map(s => {
+              const clean = s.replace(/[<>]/g, '');
+              return { original: s, parsed: parseFloat(clean) };
+            })
+            .filter(n => !isNaN(n.parsed) && n.parsed >= 0.1 && n.parsed < 100000);
+
+          if (candidateNumbers.length === 0) {
+            // Fallback: use all numbers if filtering removed everything
+            candidateNumbers = allNumbers.map(s => ({
+              original: s,
+              parsed: parseFloat(s.replace(/[<>]/g, ''))
+            })).filter(n => !isNaN(n.parsed));
+          }
+
+          if (candidateNumbers.length === 0) continue;
+
+          // Take the first reasonable number as starting point
+          let valueStr = candidateNumbers[0].original;
 
           // Check if this is a concatenated number (result + limit merged)
           // E.g., "42450" = 42 (result) + 450 (limit)
@@ -214,16 +243,25 @@ function extractMaterialData(text: string, filename: string): Material {
             }
           }
 
-          // If we have multiple separate numbers, take the smallest
-          if (allNumbers.length > 1) {
-            const numbers = allNumbers.map(s => {
-              const clean = s.replace(/[<>]/g, '');
-              return { original: s, parsed: parseFloat(clean) };
-            }).filter(n => !isNaN(n.parsed) && n.parsed < 10000); // Filter out huge numbers
+          // If we still have multiple reasonable numbers after concatenation check,
+          // take the smallest (likely the actual result vs limits/dates)
+          if (candidateNumbers.length > 1 && !valueStr.includes('<') && !valueStr.includes('>')) {
+            const reasonableNumbers = candidateNumbers.filter(n => {
+              // For heavy metals, results are typically 0-1000
+              // For texture/physical, typically 0-100
+              if (param.unit === 'mg/kg' && knownLimit) {
+                return n.parsed <= knownLimit * 10; // Allow up to 10x the limit
+              } else if (param.unit === '%') {
+                return n.parsed <= 100;
+              } else if (param.standardName === 'pH') {
+                return n.parsed >= 0 && n.parsed <= 14;
+              }
+              return n.parsed < 10000; // General sanity check
+            });
 
-            if (numbers.length > 0) {
-              numbers.sort((a, b) => a.parsed - b.parsed);
-              valueStr = numbers[0].original;
+            if (reasonableNumbers.length > 0) {
+              reasonableNumbers.sort((a, b) => a.parsed - b.parsed);
+              valueStr = reasonableNumbers[0].original;
             }
           }
 
