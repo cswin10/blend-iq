@@ -108,14 +108,36 @@ export default function Results({ result, materials, config, onBack, onStartNew 
       layout={{
         ternary: {
           sum: 100,
-          aaxis: { title: 'Clay %', min: 0, gridcolor: '#f0f0f0' },
-          baxis: { title: 'Silt %', min: 0, gridcolor: '#f0f0f0' },
-          caxis: { title: 'Sand %', min: 0, gridcolor: '#f0f0f0' },
+          aaxis: {
+            title: { text: 'Clay %', font: { size: window.innerWidth < 640 ? 10 : 12 } },
+            min: 0,
+            gridcolor: '#f0f0f0',
+            tickfont: { size: window.innerWidth < 640 ? 9 : 10 }
+          },
+          baxis: {
+            title: { text: 'Silt %', font: { size: window.innerWidth < 640 ? 10 : 12 } },
+            min: 0,
+            gridcolor: '#f0f0f0',
+            tickfont: { size: window.innerWidth < 640 ? 9 : 10 }
+          },
+          caxis: {
+            title: { text: 'Sand %', font: { size: window.innerWidth < 640 ? 10 : 12 } },
+            min: 0,
+            gridcolor: '#f0f0f0',
+            tickfont: { size: window.innerWidth < 640 ? 9 : 10 }
+          },
         },
         showlegend: true,
-        legend: { x: 0, y: -0.1, orientation: 'h' },
-        margin: { l: 0, r: 0, t: 0, b: 0 },
-        height: 400,
+        legend: {
+          x: 0.5,
+          xanchor: 'center',
+          y: -0.15,
+          orientation: 'h',
+          font: { size: window.innerWidth < 640 ? 9 : 11 }
+        },
+        margin: { l: 60, r: 60, t: 20, b: 80 },
+        height: window.innerWidth < 640 ? 450 : 500,
+        autosize: true,
       }}
       config={{ displayModeBar: false }}
       className="w-full"
@@ -312,7 +334,7 @@ export default function Results({ result, materials, config, onBack, onStartNew 
         <div className="card mb-6">
           <h2 className="text-lg sm:text-xl font-semibold text-navy-700 mb-4">Soil Texture Analysis</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            <div className="min-h-[300px]">{soilTexturePlot}</div>
+            <div className="min-h-[450px] lg:min-h-[500px] flex items-center justify-center">{soilTexturePlot}</div>
             <div className="flex flex-col justify-center">
               <div className="space-y-3">
                 <div className="flex justify-between">

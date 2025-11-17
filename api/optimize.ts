@@ -326,14 +326,26 @@ function calculateObjective(
     const lower = paramLimits.lower;
     const upper = paramLimits.upper;
 
-    const safeDivisor = Math.abs(targetValue) > 1e-10 ? Math.abs(targetValue) : 1.0;
-
+    let safeDivisor: number;
     let residual: number;
+
     if (lower !== undefined && blendValue < lower) {
+      safeDivisor = Math.abs(lower) > 1e-10 ? Math.abs(lower) : 1.0;
       residual = (lower - blendValue) / safeDivisor;
     } else if (upper !== undefined && blendValue > upper) {
+      safeDivisor = Math.abs(upper) > 1e-10 ? Math.abs(upper) : 1.0;
       residual = (blendValue - upper) / safeDivisor;
     } else {
+      // Within acceptable range
+      // For parameters with upper limit only (heavy metals), use upper limit as divisor
+      if (upper !== undefined && lower === undefined && Math.abs(targetValue) < 1e-10) {
+        safeDivisor = Math.abs(upper);
+      } else if (lower !== undefined && upper !== undefined) {
+        // For range parameters, use range width
+        safeDivisor = Math.abs(upper - lower);
+      } else {
+        safeDivisor = Math.abs(targetValue) > 1e-10 ? Math.abs(targetValue) : 1.0;
+      }
       residual = (blendValue - targetValue) / safeDivisor;
     }
 
@@ -453,15 +465,32 @@ function calculateResiduals(
     const upper = paramLimits.upper;
 
     let residual: number;
+    let safeDivisor: number;
+
     if (lower !== undefined && blendValue < lower) {
+      // Below lower limit - calculate how far below
       residual = blendValue - lower;
+      safeDivisor = Math.abs(lower) > 1e-10 ? Math.abs(lower) : 1.0;
     } else if (upper !== undefined && blendValue > upper) {
+      // Above upper limit - calculate how far above
       residual = blendValue - upper;
+      safeDivisor = Math.abs(upper) > 1e-10 ? Math.abs(upper) : 1.0;
     } else {
+      // Within acceptable range
       residual = blendValue - target;
+
+      // For parameters with upper limit only (heavy metals), use upper limit as divisor
+      // This prevents huge residual percentages when target is 0
+      if (upper !== undefined && lower === undefined && Math.abs(target) < 1e-10) {
+        safeDivisor = Math.abs(upper);
+      } else if (lower !== undefined && upper !== undefined) {
+        // For range parameters, use range width
+        safeDivisor = Math.abs(upper - lower);
+      } else {
+        safeDivisor = Math.abs(target) > 1e-10 ? Math.abs(target) : 1.0;
+      }
     }
 
-    const safeDivisor = Math.abs(target) > 1e-10 ? Math.abs(target) : 1.0;
     const residualPercent = Math.abs(residual / safeDivisor) * 100;
 
     let status: string;
