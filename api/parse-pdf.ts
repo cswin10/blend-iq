@@ -133,12 +133,33 @@ function extractMaterialData(text: string, filename: string): Material {
       const matchedTerm = param.search.find(term => lineLower.includes(term));
 
       if (matchedTerm && !parameters[param.standardName]) {
-        // Found a parameter! Now extract the numeric value
-        // Look for patterns like: <0.5, >100, 12.5, 0.8, etc.
-        const valueMatch = line.match(/([<>]?\d+\.?\d*)/);
+        // Found a parameter! Now extract numeric values
+        // Extract ALL numbers from the line (to handle cases where spaces are missing)
+        const allNumbers = line.match(/([<>]?\d+\.?\d*)/g);
 
-        if (valueMatch) {
-          const valueStr = valueMatch[1];
+        if (allNumbers && allNumbers.length > 0) {
+          // For lab reports, format is usually: Parameter Units Result Limit Status
+          // If we have multiple numbers, the RESULT is typically smaller than LIMIT
+          // Take the first number that's not super large (likely a limit value)
+
+          let valueStr = allNumbers[0]; // Default to first number
+
+          // If we have multiple numbers, use heuristics:
+          if (allNumbers.length > 1) {
+            // For heavy metals, result is typically < 1000, limits can be > 1000
+            // Take the smallest value as it's likely the actual result
+            const numbers = allNumbers.map(s => {
+              const clean = s.replace(/[<>]/g, '');
+              return { original: s, parsed: parseFloat(clean) };
+            }).filter(n => !isNaN(n.parsed));
+
+            if (numbers.length > 0) {
+              // Take the smallest number (likely the result, not the limit)
+              numbers.sort((a, b) => a.parsed - b.parsed);
+              valueStr = numbers[0].original;
+            }
+          }
+
           let value: number | null = null;
 
           if (valueStr.startsWith('<')) {
