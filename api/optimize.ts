@@ -97,6 +97,59 @@ const ZERO_SEEKING = [
   'PAH (Total)', 'PCBs (Total)', 'Asbestos'
 ];
 
+const PARAMETER_CATEGORIES: { [key: string]: string } = {
+  // Heavy Metals
+  'Arsenic': 'Heavy Metals',
+  'Cadmium': 'Heavy Metals',
+  'Chromium (Total)': 'Heavy Metals',
+  'Chromium (VI)': 'Heavy Metals',
+  'Copper': 'Heavy Metals',
+  'Lead': 'Heavy Metals',
+  'Mercury': 'Heavy Metals',
+  'Nickel': 'Heavy Metals',
+  'Selenium': 'Heavy Metals',
+  'Zinc': 'Heavy Metals',
+  'Antimony': 'Heavy Metals',
+  'Molybdenum': 'Heavy Metals',
+
+  // Soil Texture
+  'Clay': 'Soil Texture',
+  'Silt': 'Soil Texture',
+  'Sand': 'Soil Texture',
+
+  // Physical Properties
+  'pH': 'Physical Properties',
+  'Organic Matter': 'Physical Properties',
+  'Stone Content (>2mm)': 'Physical Properties',
+  'Stone Content (2-6mm)': 'Physical Properties',
+  'Stone Content (6-20mm)': 'Physical Properties',
+  'Moisture Content': 'Physical Properties',
+  'Electrical Conductivity': 'Physical Properties',
+  'Carbonate': 'Physical Properties',
+
+  // Nutrients
+  'Total Nitrogen': 'Nutrients',
+  'Phosphorus': 'Nutrients',
+  'Phosphorus (P2O5)': 'Nutrients',
+  'Potassium': 'Nutrients',
+  'Potassium (K2O)': 'Nutrients',
+  'Magnesium': 'Nutrients',
+  'C:N Ratio': 'Nutrients',
+  'Boron (Water Soluble)': 'Nutrients',
+
+  // Contaminants
+  'Cyanide (Free)': 'Contaminants',
+  'Cyanide (Total)': 'Contaminants',
+  'TPH (Total Petroleum Hydrocarbons)': 'Contaminants',
+  'PAH (Total)': 'Contaminants',
+  'PCBs (Total)': 'Contaminants',
+  'Asbestos': 'Contaminants',
+};
+
+function getParameterCategory(paramName: string): string {
+  return PARAMETER_CATEGORIES[paramName] || 'Other';
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Handle CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -511,6 +564,8 @@ function calculateResiduals(
       residual,
       residualPercent,
       status,
+      category: getParameterCategory(paramName),
+      unit: 'mg/kg', // Default unit, could be enhanced to be parameter-specific
     });
   }
 
