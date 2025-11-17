@@ -267,15 +267,16 @@ def calculate_objective(ratios, material_params, targets, limits, config):
         lower = param_limits.get('lower')
         upper = param_limits.get('upper')
 
-        # Use safe divisor to handle None or zero target values
-        safe_divisor = target_value if (target_value is not None and target_value != 0) else 1
+        # Use safe values to handle None or zero target values
+        safe_target = target_value if target_value is not None else 0
+        safe_divisor = safe_target if safe_target != 0 else 1
 
         if lower is not None and blend_value < lower:
             residual = (lower - blend_value) / safe_divisor
         elif upper is not None and blend_value > upper:
             residual = (blend_value - upper) / safe_divisor
         else:
-            residual = (blend_value - target_value) / safe_divisor
+            residual = (blend_value - safe_target) / safe_divisor
 
         if abs(residual) > tolerance:
             total_error += (residual ** 2) * 10
@@ -311,7 +312,9 @@ def calculate_residuals(blend_params, targets, limits, config):
     tolerance = config.get('tolerance', 30)
 
     for param_name, blend_value in blend_params.items():
-        target = targets.get(param_name, 0)
+        target = targets.get(param_name)
+        # Use safe target to handle None values
+        safe_target = target if target is not None else 0
         param_limits = limits.get(param_name, {})
 
         lower = param_limits.get('lower')
@@ -322,10 +325,10 @@ def calculate_residuals(blend_params, targets, limits, config):
         elif upper is not None and blend_value > upper:
             residual = blend_value - upper
         else:
-            residual = blend_value - target
+            residual = blend_value - safe_target
 
         # Use safe divisor to handle None or zero target values
-        safe_divisor = target if (target is not None and target != 0) else 1
+        safe_divisor = safe_target if safe_target != 0 else 1
         residual_percent = abs(residual / safe_divisor) * 100
 
         if residual_percent <= tolerance:
@@ -340,7 +343,7 @@ def calculate_residuals(blend_params, targets, limits, config):
             'value': float(blend_value),
             'lowerLimit': lower,
             'upperLimit': upper,
-            'target': float(target),
+            'target': float(safe_target),
             'residual': float(residual),
             'residualPercent': float(residual_percent),
             'status': status
