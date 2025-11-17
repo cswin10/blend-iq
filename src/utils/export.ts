@@ -103,8 +103,8 @@ export function exportToPDF(
       [
         'Status',
         result.soilTexture.withinAcceptableRange
-          ? '✓ Within acceptable range (BS3882:2015)'
-          : '✗ Outside acceptable range',
+          ? 'PASS - Within acceptable range (BS3882:2015)'
+          : 'FAIL - Outside acceptable range',
       ],
     ];
 
@@ -140,7 +140,7 @@ export function exportToPDF(
         : '-';
 
     const statusSymbol =
-      r.status === 'compliant' ? '✓' : r.status === 'marginal' ? '⚠' : '✗';
+      r.status === 'compliant' ? 'PASS' : r.status === 'marginal' ? 'WARN' : 'FAIL';
 
     return [
       r.parameter,
@@ -199,7 +199,7 @@ export function exportToPDF(
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   const disclaimerText =
-    '⚠️ This optimisation is based solely on laboratory data provided. Validation testing by a UKAS or MCERTS accredited laboratory is strongly recommended before use.';
+    'WARNING: This optimisation is based solely on laboratory data provided. Validation testing by a UKAS or MCERTS accredited laboratory is strongly recommended before use.';
 
   const splitDisclaimer = doc.splitTextToSize(disclaimerText, 180);
   doc.text(splitDisclaimer, 14, yPosition);
