@@ -91,8 +91,24 @@ function extractMaterialData(text: string, filename: string): Material {
 
   const parameters: Material['parameters'] = {};
 
-  // Split into lines for easier parsing
-  const lines = text.split('\n');
+  // BS3882 limits for intelligent number splitting
+  const knownLimits: { [key: string]: number } = {
+    'Arsenic': 20,
+    'Cadmium': 3,
+    'Chromium (Total)': 100,
+    'Chromium (VI)': 1,
+    'Copper': 200,
+    'Lead': 450,
+    'Mercury': 1,
+    'Nickel': 75,
+    'Zinc': 300,
+    'Selenium': 3,
+    'Stone Content (>2mm)': 8,
+    'Organic Matter': 10,
+    'Clay': 35,
+    'Silt': 60,
+    'Sand': 60,
+  };
 
   // Parameter definitions: search terms and standard names
   const parameterDefs = [
@@ -118,6 +134,9 @@ function extractMaterialData(text: string, filename: string): Material {
     { search: ['antimony', 'sb'], standardName: 'Antimony', unit: 'mg/kg' },
   ];
 
+  // Split into lines for easier parsing
+  const lines = text.split('\n');
+
   // Look through each line for parameter names and extract values
   for (const line of lines) {
     const lineLower = line.toLowerCase();
@@ -134,27 +153,57 @@ function extractMaterialData(text: string, filename: string): Material {
 
       if (matchedTerm && !parameters[param.standardName]) {
         // Found a parameter! Now extract numeric values
-        // Extract ALL numbers from the line (to handle cases where spaces are missing)
+        // Extract ALL numbers from the line
         const allNumbers = line.match(/([<>]?\d+\.?\d*)/g);
 
         if (allNumbers && allNumbers.length > 0) {
-          // For lab reports, format is usually: Parameter Units Result Limit Status
-          // If we have multiple numbers, the RESULT is typically smaller than LIMIT
-          // Take the first number that's not super large (likely a limit value)
-
           let valueStr = allNumbers[0]; // Default to first number
 
-          // If we have multiple numbers, use heuristics:
+          // Check if this is a concatenated number (result + limit merged)
+          // E.g., "42450" = 42 (result) + 450 (limit)
+          const knownLimit = knownLimits[param.standardName];
+
+          if (knownLimit && !valueStr.startsWith('<') && !valueStr.startsWith('>')) {
+            const numValue = parseFloat(valueStr);
+
+            // If number is suspiciously large (> 1000 for most params), check for concatenation
+            if (numValue > 1000 || (numValue > 100 && knownLimit < 100)) {
+              const numStr = valueStr;
+              const limitStr = knownLimit.toString();
+
+              // Check if the number ends with the known limit
+              if (numStr.endsWith(limitStr)) {
+                // Split off the limit, what's left is the actual value
+                const actualValue = numStr.substring(0, numStr.length - limitStr.length);
+                if (actualValue.length > 0 && !isNaN(parseFloat(actualValue))) {
+                  valueStr = actualValue;
+                }
+              }
+              // Alternative: number might have limit in middle (e.g., "31370" = 31 + 37 + 0)
+              // Try to find a reasonable split point
+              else if (numStr.length >= 3) {
+                // For heavy metals, results are typically 0-500, so take first 1-3 digits
+                // Try first 1, 2, then 3 digits
+                for (let splitPoint = 1; splitPoint <= Math.min(3, numStr.length - 1); splitPoint++) {
+                  const candidate = parseFloat(numStr.substring(0, splitPoint));
+                  // If candidate is reasonable for this parameter (< limit), use it
+                  if (candidate > 0 && candidate < knownLimit * 2) {
+                    valueStr = candidate.toString();
+                    break;
+                  }
+                }
+              }
+            }
+          }
+
+          // If we have multiple separate numbers, take the smallest
           if (allNumbers.length > 1) {
-            // For heavy metals, result is typically < 1000, limits can be > 1000
-            // Take the smallest value as it's likely the actual result
             const numbers = allNumbers.map(s => {
               const clean = s.replace(/[<>]/g, '');
               return { original: s, parsed: parseFloat(clean) };
-            }).filter(n => !isNaN(n.parsed));
+            }).filter(n => !isNaN(n.parsed) && n.parsed < 10000); // Filter out huge numbers
 
             if (numbers.length > 0) {
-              // Take the smallest number (likely the result, not the limit)
               numbers.sort((a, b) => a.parsed - b.parsed);
               valueStr = numbers[0].original;
             }
@@ -163,7 +212,6 @@ function extractMaterialData(text: string, filename: string): Material {
           let value: number | null = null;
 
           if (valueStr.startsWith('<')) {
-            // Below detection limit
             value = null;
           } else if (valueStr.startsWith('>')) {
             value = parseFloat(valueStr.substring(1));
@@ -171,7 +219,7 @@ function extractMaterialData(text: string, filename: string): Material {
             value = parseFloat(valueStr);
           }
 
-          // Only add if we got a valid number or null (for <LOD)
+          // Only add if we got a valid number
           if (value !== null && !isNaN(value)) {
             parameters[param.standardName] = {
               value,
@@ -179,7 +227,7 @@ function extractMaterialData(text: string, filename: string): Material {
               source: sourceLab,
               date,
             };
-            break; // Found this parameter, move to next line
+            break;
           } else if (valueStr.startsWith('<')) {
             parameters[param.standardName] = {
               value: null,
