@@ -68,9 +68,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 function extractMaterialData(text: string, filename: string): Material {
-  // Extract material name
+  // Extract material name from Sample ID or Sample Reference
   let materialName = filename.replace('.pdf', '');
-  const sampleIdMatch = text.match(/Sample\s+ID[:\s]+([^\s\n]+)/i);
+  const sampleIdMatch = text.match(/Sample\s+(?:ID|Reference)[:\s]+([A-Z0-9\-]+)/i);
   if (sampleIdMatch) {
     materialName = sampleIdMatch[1].trim();
   }
@@ -154,16 +154,18 @@ function extractMaterialData(text: string, filename: string): Material {
 
       if (matchedTerm && !parameters[param.standardName]) {
         // Found a parameter! Now extract numeric values
-        // Clean the line: remove common non-data patterns
+        // Strategy: Find the parameter name, skip the unit, then take ONLY the first number
+
+        // Remove known noise patterns first
         let cleanLine = line;
-        // Remove dates (dd/mm/yyyy or mm/dd/yyyy)
-        cleanLine = cleanLine.replace(/\d{1,2}\/\d{1,2}\/\d{4}/g, '');
-        // Remove particle size ranges like (0.05-2.0mm), (<0.002mm), (2-6mm)
-        cleanLine = cleanLine.replace(/\([<>]?\d*\.?\d+-?\d*\.?\d*mm\)/gi, '');
-        // Remove year ranges like (2015-2024)
-        cleanLine = cleanLine.replace(/\(\d{4}-\d{4}\)/g, '');
-        // Remove acceptable range patterns like "20 - 70", "5.5 - 8.5" (common in BS3882 reports)
-        cleanLine = cleanLine.replace(/\d+\.?\d*\s*-\s*\d+\.?\d*/g, '');
+        // Remove dates
+        cleanLine = cleanLine.replace(/\d{1,2}\/\d{1,2}\/\d{4}/g, ' ');
+        // Remove particle size ranges like (0.05-2.0mm), (<0.002mm)
+        cleanLine = cleanLine.replace(/\([<>]?\d*\.?\d+-?\d*\.?\d*mm\)/gi, ' ');
+        // Remove year ranges
+        cleanLine = cleanLine.replace(/\(\d{4}-\d{4}\)/g, ' ');
+        // Remove "pH (1:2.5 water)" type patterns
+        cleanLine = cleanLine.replace(/\(\d+:[\d.]+[^)]*\)/g, ' ');
 
         // Extract ALL numbers from the cleaned line
         const allNumbers = cleanLine.match(/([<>]?\d+\.?\d*)/g);
@@ -175,7 +177,19 @@ function extractMaterialData(text: string, filename: string): Material {
               const clean = s.replace(/[<>]/g, '');
               return { original: s, parsed: parseFloat(clean) };
             })
-            .filter(n => !isNaN(n.parsed) && n.parsed >= 0.1 && n.parsed < 100000);
+            .filter(n => {
+              if (isNaN(n.parsed)) return false;
+              // Filter by parameter type for reasonableness
+              if (param.unit === '%') {
+                return n.parsed >= 0.1 && n.parsed <= 100;
+              } else if (param.standardName === 'pH') {
+                return n.parsed >= 0 && n.parsed <= 14;
+              } else if (param.unit === 'mg/kg' || param.unit === 'mg/L') {
+                // Heavy metals and nutrients: typically 0-10000
+                return n.parsed >= 0.01 && n.parsed < 10000;
+              }
+              return n.parsed >= 0.1 && n.parsed < 100000;
+            });
 
           if (candidateNumbers.length === 0) {
             // Fallback: use all numbers if filtering removed everything
@@ -187,7 +201,7 @@ function extractMaterialData(text: string, filename: string): Material {
 
           if (candidateNumbers.length === 0) continue;
 
-          // Take the first reasonable number as starting point
+          // CRITICAL: Take the FIRST reasonable number (result always comes before limits in lab reports)
           let valueStr = candidateNumbers[0].original;
 
           // Check if this is a concatenated number (result + limit merged)
@@ -245,27 +259,8 @@ function extractMaterialData(text: string, filename: string): Material {
             }
           }
 
-          // If we still have multiple reasonable numbers after concatenation check,
-          // take the smallest (likely the actual result vs limits/dates)
-          if (candidateNumbers.length > 1 && !valueStr.includes('<') && !valueStr.includes('>')) {
-            const reasonableNumbers = candidateNumbers.filter(n => {
-              // For heavy metals, results are typically 0-1000
-              // For texture/physical, typically 0-100
-              if (param.unit === 'mg/kg' && knownLimit) {
-                return n.parsed <= knownLimit * 10; // Allow up to 10x the limit
-              } else if (param.unit === '%') {
-                return n.parsed <= 100;
-              } else if (param.standardName === 'pH') {
-                return n.parsed >= 0 && n.parsed <= 14;
-              }
-              return n.parsed < 10000; // General sanity check
-            });
-
-            if (reasonableNumbers.length > 0) {
-              reasonableNumbers.sort((a, b) => a.parsed - b.parsed);
-              valueStr = reasonableNumbers[0].original;
-            }
-          }
+          // We've already taken the first reasonable number above.
+          // No need to re-sort or re-filter - the first number is always the result value.
 
           let value: number | null = null;
 
