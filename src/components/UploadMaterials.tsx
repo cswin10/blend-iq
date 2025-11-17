@@ -3,6 +3,7 @@ import { Upload, FileText, Trash2, CheckCircle, AlertCircle, Loader } from 'luci
 import { Material } from '../types';
 import { parseCSV, countDetectedParameters } from '../utils/csvParser';
 import { ALL_PARAMETERS } from '../constants';
+import ManualEntryModal from './ManualEntryModal';
 
 interface UploadMaterialsProps {
   materials: Material[];
@@ -17,7 +18,6 @@ export default function UploadMaterials({
 }: UploadMaterialsProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
-  const [manualMaterialName, setManualMaterialName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,24 +106,9 @@ export default function UploadMaterials({
     );
   };
 
-  const handleAddManualMaterial = () => {
-    if (!manualMaterialName.trim()) {
-      setError('Please enter a material name');
-      return;
-    }
-
-    const newMaterial: Material = {
-      id: `mat-${Date.now()}-manual`,
-      name: manualMaterialName.trim(),
-      availableTonnage: 0,
-      parameters: {},
-      source: 'Manual Entry',
-    };
-
-    onMaterialsChange([...materials, newMaterial]);
-    setManualMaterialName('');
+  const handleSaveManualMaterial = (material: Material) => {
+    onMaterialsChange([...materials, material]);
     setShowManualEntry(false);
-    setError(null);
   };
 
   const canProceed = materials.length >= 2 && materials.every((m) => m.availableTonnage > 0);
@@ -176,10 +161,7 @@ export default function UploadMaterials({
 
         <div className="mt-4 flex justify-between items-center">
           <button
-            onClick={() => {
-              setShowManualEntry(!showManualEntry);
-              setError(null);
-            }}
+            onClick={() => setShowManualEntry(true)}
             className="text-sm text-navy-600 hover:text-navy-700 font-medium"
           >
             + Manual Entry
@@ -195,49 +177,6 @@ export default function UploadMaterials({
             </div>
           )}
         </div>
-
-        {/* Manual Entry Form */}
-        {showManualEntry && (
-          <div className="mt-4 p-4 bg-blue-50 border-2 border-navy-300 rounded-lg">
-            <h3 className="text-sm font-semibold text-navy-700 mb-3">Add Manual Material</h3>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="text"
-                value={manualMaterialName}
-                onChange={(e) => setManualMaterialName(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleAddManualMaterial();
-                  }
-                }}
-                placeholder="Enter material name (e.g., Compost A, Topsoil B)"
-                className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-navy-500"
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={handleAddManualMaterial}
-                  className="px-4 py-2 bg-navy-600 text-white rounded-lg text-sm font-medium hover:bg-navy-700 transition-colors"
-                >
-                  Add Material
-                </button>
-                <button
-                  onClick={() => {
-                    setShowManualEntry(false);
-                    setManualMaterialName('');
-                    setError(null);
-                  }}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-            <p className="text-xs text-gray-600 mt-2">
-              Note: You can add parameter values later in the Configuration step.
-            </p>
-          </div>
-        )}
 
         {error && (
           <div className="mt-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -324,6 +263,14 @@ export default function UploadMaterials({
         <p className="text-xs sm:text-sm text-amber-600 text-center sm:text-right mt-2">
           Please enter available tonnage for all materials to continue
         </p>
+      )}
+
+      {/* Manual Entry Modal */}
+      {showManualEntry && (
+        <ManualEntryModal
+          onClose={() => setShowManualEntry(false)}
+          onSave={handleSaveManualMaterial}
+        />
       )}
     </div>
   );
