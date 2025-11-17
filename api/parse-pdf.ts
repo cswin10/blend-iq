@@ -91,8 +91,24 @@ function extractMaterialData(text: string, filename: string): Material {
 
   const parameters: Material['parameters'] = {};
 
-  // Split into lines for easier parsing
-  const lines = text.split('\n');
+  // BS3882 limits for intelligent number splitting
+  const knownLimits: { [key: string]: number } = {
+    'Arsenic': 20,
+    'Cadmium': 3,
+    'Chromium (Total)': 100,
+    'Chromium (VI)': 1,
+    'Copper': 200,
+    'Lead': 450,
+    'Mercury': 1,
+    'Nickel': 75,
+    'Zinc': 300,
+    'Selenium': 3,
+    'Stone Content (>2mm)': 8,
+    'Organic Matter': 10,
+    'Clay': 35,
+    'Silt': 60,
+    'Sand': 60,
+  };
 
   // Parameter definitions: search terms and standard names
   const parameterDefs = [
@@ -118,6 +134,9 @@ function extractMaterialData(text: string, filename: string): Material {
     { search: ['antimony', 'sb'], standardName: 'Antimony', unit: 'mg/kg' },
   ];
 
+  // Split into lines for easier parsing
+  const lines = text.split('\n');
+
   // Look through each line for parameter names and extract values
   for (const line of lines) {
     const lineLower = line.toLowerCase();
@@ -134,27 +153,75 @@ function extractMaterialData(text: string, filename: string): Material {
 
       if (matchedTerm && !parameters[param.standardName]) {
         // Found a parameter! Now extract numeric values
-        // Extract ALL numbers from the line (to handle cases where spaces are missing)
+        // Extract ALL numbers from the line
         const allNumbers = line.match(/([<>]?\d+\.?\d*)/g);
 
         if (allNumbers && allNumbers.length > 0) {
-          // For lab reports, format is usually: Parameter Units Result Limit Status
-          // If we have multiple numbers, the RESULT is typically smaller than LIMIT
-          // Take the first number that's not super large (likely a limit value)
-
           let valueStr = allNumbers[0]; // Default to first number
 
-          // If we have multiple numbers, use heuristics:
+          // Check if this is a concatenated number (result + limit merged)
+          // E.g., "42450" = 42 (result) + 450 (limit)
+          const knownLimit = knownLimits[param.standardName];
+
+          if (knownLimit && !valueStr.startsWith('<') && !valueStr.startsWith('>')) {
+            const numValue = parseFloat(valueStr);
+
+            // If number is suspiciously large (> 1000 for most params), check for concatenation
+            if (numValue > 1000 || (numValue > 100 && knownLimit < 100)) {
+              const numStr = valueStr;
+              const limitStr = knownLimit.toString();
+
+              // Check if the number ends with the known limit
+              if (numStr.endsWith(limitStr)) {
+                // Split off the limit, what's left is the actual value
+                const actualValue = numStr.substring(0, numStr.length - limitStr.length);
+                if (actualValue.length > 0 && !isNaN(parseFloat(actualValue))) {
+                  valueStr = actualValue;
+                }
+              }
+              // Use length-based heuristic for splitting
+              // Heavy metals are typically 1-3 digits, limits are 2-3 digits
+              else if (numStr.length >= 4) {
+                let splitPoint: number;
+
+                if (numStr.length === 4) {
+                  // Could be 1+3 or 2+2, prefer 2 digits if valid
+                  const candidate2 = parseFloat(numStr.substring(0, 2));
+                  const candidate1 = parseFloat(numStr.substring(0, 1));
+                  if (candidate2 > 0 && candidate2 <= knownLimit) {
+                    splitPoint = 2;
+                  } else if (candidate1 > 0 && candidate1 <= knownLimit) {
+                    splitPoint = 1;
+                  } else {
+                    splitPoint = 2; // default to 2
+                  }
+                } else if (numStr.length === 5) {
+                  // Likely 2+3 (e.g., 39200, 26100), take first 2 digits
+                  splitPoint = 2;
+                } else if (numStr.length === 6) {
+                  // Could be 3+3 (e.g., 392450), take first 3 digits
+                  splitPoint = 3;
+                } else {
+                  // Unknown length, take first 2 digits as safe default
+                  splitPoint = Math.min(2, Math.floor(numStr.length / 2));
+                }
+
+                const candidate = parseFloat(numStr.substring(0, splitPoint));
+                if (candidate > 0 && !isNaN(candidate)) {
+                  valueStr = numStr.substring(0, splitPoint);
+                }
+              }
+            }
+          }
+
+          // If we have multiple separate numbers, take the smallest
           if (allNumbers.length > 1) {
-            // For heavy metals, result is typically < 1000, limits can be > 1000
-            // Take the smallest value as it's likely the actual result
             const numbers = allNumbers.map(s => {
               const clean = s.replace(/[<>]/g, '');
               return { original: s, parsed: parseFloat(clean) };
-            }).filter(n => !isNaN(n.parsed));
+            }).filter(n => !isNaN(n.parsed) && n.parsed < 10000); // Filter out huge numbers
 
             if (numbers.length > 0) {
-              // Take the smallest number (likely the result, not the limit)
               numbers.sort((a, b) => a.parsed - b.parsed);
               valueStr = numbers[0].original;
             }
@@ -163,7 +230,6 @@ function extractMaterialData(text: string, filename: string): Material {
           let value: number | null = null;
 
           if (valueStr.startsWith('<')) {
-            // Below detection limit
             value = null;
           } else if (valueStr.startsWith('>')) {
             value = parseFloat(valueStr.substring(1));
@@ -171,7 +237,7 @@ function extractMaterialData(text: string, filename: string): Material {
             value = parseFloat(valueStr);
           }
 
-          // Only add if we got a valid number or null (for <LOD)
+          // Only add if we got a valid number
           if (value !== null && !isNaN(value)) {
             parameters[param.standardName] = {
               value,
@@ -179,7 +245,7 @@ function extractMaterialData(text: string, filename: string): Material {
               source: sourceLab,
               date,
             };
-            break; // Found this parameter, move to next line
+            break;
           } else if (valueStr.startsWith('<')) {
             parameters[param.standardName] = {
               value: null,
