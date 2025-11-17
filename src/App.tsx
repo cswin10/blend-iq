@@ -56,11 +56,34 @@ function App() {
       <header className="animated-gradient text-white shadow-2xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="slide-in">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">BlendIQ</h1>
-              <p className="text-blue-100 text-xs sm:text-sm mt-1">
-                Soil Blending Optimisation for UK Remediation Engineers
-              </p>
+            <div className="slide-in flex items-center gap-3 sm:gap-4">
+              {/* Logo */}
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg flex items-center justify-center shadow-lg">
+                  <svg viewBox="0 0 40 40" className="w-8 h-8 sm:w-10 sm:h-10">
+                    <defs>
+                      <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style={{ stopColor: '#0066cc', stopOpacity: 1 }} />
+                        <stop offset="100%" style={{ stopColor: '#003d5c', stopOpacity: 1 }} />
+                      </linearGradient>
+                    </defs>
+                    {/* Layered soil representation */}
+                    <rect x="8" y="28" width="24" height="4" fill="url(#logoGradient)" rx="1" />
+                    <rect x="6" y="22" width="28" height="4" fill="url(#logoGradient)" opacity="0.8" rx="1" />
+                    <rect x="10" y="16" width="20" height="4" fill="url(#logoGradient)" opacity="0.6" rx="1" />
+                    {/* IQ symbol - beaker/flask */}
+                    <path d="M16 6 L16 12 L14 18 L14 20 C14 21 15 22 16 22 L24 22 C25 22 26 21 26 20 L26 18 L24 12 L24 6 Z"
+                          fill="none" stroke="url(#logoGradient)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="20" cy="18" r="2" fill="url(#logoGradient)" opacity="0.4"/>
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">BlendIQ</h1>
+                <p className="text-blue-100 text-xs sm:text-sm mt-1">
+                  Soil Blending Optimisation for UK Remediation Engineers
+                </p>
+              </div>
             </div>
             {/* Progress Indicator - Hidden on mobile, shown on tablet+ */}
             <div className="hidden md:flex items-center gap-2 lg:gap-3">
