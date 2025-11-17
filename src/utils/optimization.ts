@@ -16,7 +16,7 @@ import {
 
 /**
  * Main optimization function
- * Calls the API endpoint to run Python SciPy optimization
+ * Calls the TypeScript API endpoint to run gradient descent optimization
  */
 export async function optimizeBlend(
   materials: Material[],

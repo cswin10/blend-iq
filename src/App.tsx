@@ -143,7 +143,7 @@ function App() {
               Optimising Blend Ratios...
             </h2>
             <p className="text-sm sm:text-base text-gray-600 text-center px-4">
-              Running SciPy optimisation engine to find optimal mixing ratios
+              Finding optimal mixing ratios to meet compliance standards
             </p>
           </div>
         )}

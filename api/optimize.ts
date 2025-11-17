@@ -97,6 +97,59 @@ const ZERO_SEEKING = [
   'PAH (Total)', 'PCBs (Total)', 'Asbestos'
 ];
 
+const PARAMETER_CATEGORIES: { [key: string]: string } = {
+  // Heavy Metals
+  'Arsenic': 'Heavy Metals',
+  'Cadmium': 'Heavy Metals',
+  'Chromium (Total)': 'Heavy Metals',
+  'Chromium (VI)': 'Heavy Metals',
+  'Copper': 'Heavy Metals',
+  'Lead': 'Heavy Metals',
+  'Mercury': 'Heavy Metals',
+  'Nickel': 'Heavy Metals',
+  'Selenium': 'Heavy Metals',
+  'Zinc': 'Heavy Metals',
+  'Antimony': 'Heavy Metals',
+  'Molybdenum': 'Heavy Metals',
+
+  // Soil Texture
+  'Clay': 'Soil Texture',
+  'Silt': 'Soil Texture',
+  'Sand': 'Soil Texture',
+
+  // Physical Properties
+  'pH': 'Physical Properties',
+  'Organic Matter': 'Physical Properties',
+  'Stone Content (>2mm)': 'Physical Properties',
+  'Stone Content (2-6mm)': 'Physical Properties',
+  'Stone Content (6-20mm)': 'Physical Properties',
+  'Moisture Content': 'Physical Properties',
+  'Electrical Conductivity': 'Physical Properties',
+  'Carbonate': 'Physical Properties',
+
+  // Nutrients
+  'Total Nitrogen': 'Nutrients',
+  'Phosphorus': 'Nutrients',
+  'Phosphorus (P2O5)': 'Nutrients',
+  'Potassium': 'Nutrients',
+  'Potassium (K2O)': 'Nutrients',
+  'Magnesium': 'Nutrients',
+  'C:N Ratio': 'Nutrients',
+  'Boron (Water Soluble)': 'Nutrients',
+
+  // Contaminants
+  'Cyanide (Free)': 'Contaminants',
+  'Cyanide (Total)': 'Contaminants',
+  'TPH (Total Petroleum Hydrocarbons)': 'Contaminants',
+  'PAH (Total)': 'Contaminants',
+  'PCBs (Total)': 'Contaminants',
+  'Asbestos': 'Contaminants',
+};
+
+function getParameterCategory(paramName: string): string {
+  return PARAMETER_CATEGORIES[paramName] || 'Other';
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Handle CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -326,14 +379,26 @@ function calculateObjective(
     const lower = paramLimits.lower;
     const upper = paramLimits.upper;
 
-    const safeDivisor = Math.abs(targetValue) > 1e-10 ? Math.abs(targetValue) : 1.0;
-
+    let safeDivisor: number;
     let residual: number;
+
     if (lower !== undefined && blendValue < lower) {
+      safeDivisor = Math.abs(lower) > 1e-10 ? Math.abs(lower) : 1.0;
       residual = (lower - blendValue) / safeDivisor;
     } else if (upper !== undefined && blendValue > upper) {
+      safeDivisor = Math.abs(upper) > 1e-10 ? Math.abs(upper) : 1.0;
       residual = (blendValue - upper) / safeDivisor;
     } else {
+      // Within acceptable range
+      // For parameters with upper limit only (heavy metals), use upper limit as divisor
+      if (upper !== undefined && lower === undefined && Math.abs(targetValue) < 1e-10) {
+        safeDivisor = Math.abs(upper);
+      } else if (lower !== undefined && upper !== undefined) {
+        // For range parameters, use range width
+        safeDivisor = Math.abs(upper - lower);
+      } else {
+        safeDivisor = Math.abs(targetValue) > 1e-10 ? Math.abs(targetValue) : 1.0;
+      }
       residual = (blendValue - targetValue) / safeDivisor;
     }
 
@@ -453,15 +518,32 @@ function calculateResiduals(
     const upper = paramLimits.upper;
 
     let residual: number;
+    let safeDivisor: number;
+
     if (lower !== undefined && blendValue < lower) {
+      // Below lower limit - calculate how far below
       residual = blendValue - lower;
+      safeDivisor = Math.abs(lower) > 1e-10 ? Math.abs(lower) : 1.0;
     } else if (upper !== undefined && blendValue > upper) {
+      // Above upper limit - calculate how far above
       residual = blendValue - upper;
+      safeDivisor = Math.abs(upper) > 1e-10 ? Math.abs(upper) : 1.0;
     } else {
+      // Within acceptable range
       residual = blendValue - target;
+
+      // For parameters with upper limit only (heavy metals), use upper limit as divisor
+      // This prevents huge residual percentages when target is 0
+      if (upper !== undefined && lower === undefined && Math.abs(target) < 1e-10) {
+        safeDivisor = Math.abs(upper);
+      } else if (lower !== undefined && upper !== undefined) {
+        // For range parameters, use range width
+        safeDivisor = Math.abs(upper - lower);
+      } else {
+        safeDivisor = Math.abs(target) > 1e-10 ? Math.abs(target) : 1.0;
+      }
     }
 
-    const safeDivisor = Math.abs(target) > 1e-10 ? Math.abs(target) : 1.0;
     const residualPercent = Math.abs(residual / safeDivisor) * 100;
 
     let status: string;
@@ -482,6 +564,8 @@ function calculateResiduals(
       residual,
       residualPercent,
       status,
+      category: getParameterCategory(paramName),
+      unit: 'mg/kg', // Default unit, could be enhanced to be parameter-specific
     });
   }
 
