@@ -57,10 +57,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       success: true,
       material,
-      debug: {
-        extractedText: text.substring(0, 2000),
-        parameterCount: Object.keys(material.parameters).length,
-      },
     });
   } catch (error: any) {
     console.error('PDF parsing error:', error);
@@ -72,9 +68,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 function extractMaterialData(text: string, filename: string): Material {
-  // Normalize text - replace multiple spaces with single space
-  const normalizedText = text.replace(/\s+/g, ' ');
-
   // Extract material name
   let materialName = filename.replace('.pdf', '');
   const sampleIdMatch = text.match(/Sample\s+ID[:\s]+([^\s\n]+)/i);
@@ -98,221 +91,84 @@ function extractMaterialData(text: string, filename: string): Material {
 
   const parameters: Material['parameters'] = {};
 
-  // Define all parameters we want to extract with multiple possible patterns
-  const parameterPatterns = [
-    {
-      names: ['pH', 'ph'],
-      standardName: 'pH',
-      unit: '',
-      patterns: [
-        /\bpH\s+pH units\s+(\d+\.?\d*)/i,
-        /\bpH\s+(\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Soil Organic Matter', 'SOM', 'Organic Matter'],
-      standardName: 'Organic Matter',
-      unit: '%',
-      patterns: [
-        /\bSoil Organic Matter\s+\(SOM\)\s+%\s+(\d+\.?\d*)/i,
-        /\bOrganic Matter\s+%\s+(\d+\.?\d*)/i,
-        /\bSOM\s+%\s+(\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Sand'],
-      standardName: 'Sand',
-      unit: '%',
-      patterns: [
-        /\bSand\s+%\s+(\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Silt'],
-      standardName: 'Silt',
-      unit: '%',
-      patterns: [
-        /\bSilt\s+%\s+(\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Clay'],
-      standardName: 'Clay',
-      unit: '%',
-      patterns: [
-        /\bClay\s+%\s+(\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Stones', 'Stone Content'],
-      standardName: 'Stone Content (>2mm)',
-      unit: '%',
-      patterns: [
-        /\bStones?\s+>2mm\s+%\s+(\d+\.?\d*)/i,
-        /\bStone Content\s+%\s+(\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Total Nitrogen', 'Nitrogen'],
-      standardName: 'Nitrogen',
-      unit: '%',
-      patterns: [
-        /\bTotal Nitrogen\s+%\s+(\d+\.?\d*)/i,
-        /\bNitrogen\s+%\s+(\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Phosphorus'],
-      standardName: 'Phosphorus',
-      unit: 'mg/L',
-      patterns: [
-        /\bPhosphorus\s+\(P2O5\)\s+mg\/L\s+(\d+\.?\d*)/i,
-        /\bPhosphorus\s+mg\/L\s+(\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Potassium'],
-      standardName: 'Potassium',
-      unit: 'mg/L',
-      patterns: [
-        /\bPotassium\s+\(K2O\)\s+mg\/L\s+(\d+\.?\d*)/i,
-        /\bPotassium\s+mg\/L\s+(\d+\.?\d*)/i,
-      ],
-    },
-    // Heavy metals
-    {
-      names: ['Arsenic', 'As'],
-      standardName: 'Arsenic',
-      unit: 'mg/kg',
-      patterns: [
-        /\bArsenic\s+\(As\)\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-        /\bArsenic\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Cadmium', 'Cd'],
-      standardName: 'Cadmium',
-      unit: 'mg/kg',
-      patterns: [
-        /\bCadmium\s+\(Cd\)\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-        /\bCadmium\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Chromium', 'Cr'],
-      standardName: 'Chromium (Total)',
-      unit: 'mg/kg',
-      patterns: [
-        /\bChromium\s+\(Cr\)\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-        /\bChromium\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Chromium (VI)', 'Cr(VI)'],
-      standardName: 'Chromium (VI)',
-      unit: 'mg/kg',
-      patterns: [
-        /\bChromium\s+\(VI\)\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Copper', 'Cu'],
-      standardName: 'Copper',
-      unit: 'mg/kg',
-      patterns: [
-        /\bCopper\s+\(Cu\)\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-        /\bCopper\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Lead', 'Pb'],
-      standardName: 'Lead',
-      unit: 'mg/kg',
-      patterns: [
-        /\bLead\s+\(Pb\)\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-        /\bLead\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Mercury', 'Hg'],
-      standardName: 'Mercury',
-      unit: 'mg/kg',
-      patterns: [
-        /\bMercury\s+\(Hg\)\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-        /\bMercury\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Nickel', 'Ni'],
-      standardName: 'Nickel',
-      unit: 'mg/kg',
-      patterns: [
-        /\bNickel\s+\(Ni\)\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-        /\bNickel\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Selenium', 'Se'],
-      standardName: 'Selenium',
-      unit: 'mg/kg',
-      patterns: [
-        /\bSelenium\s+\(Se\)\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-        /\bSelenium\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Zinc', 'Zn'],
-      standardName: 'Zinc',
-      unit: 'mg/kg',
-      patterns: [
-        /\bZinc\s+\(Zn\)\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-        /\bZinc\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-      ],
-    },
-    {
-      names: ['Antimony', 'Sb'],
-      standardName: 'Antimony',
-      unit: 'mg/kg',
-      patterns: [
-        /\bAntimony\s+\(Sb\)\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-        /\bAntimony\s+mg\/kg\s+([<>]?\d+\.?\d*)/i,
-      ],
-    },
+  // Split into lines for easier parsing
+  const lines = text.split('\n');
+
+  // Parameter definitions: search terms and standard names
+  const parameterDefs = [
+    { search: ['ph'], standardName: 'pH', unit: '' },
+    { search: ['soil organic matter', 'organic matter', 'som'], standardName: 'Organic Matter', unit: '%' },
+    { search: ['sand'], standardName: 'Sand', unit: '%' },
+    { search: ['silt'], standardName: 'Silt', unit: '%' },
+    { search: ['clay'], standardName: 'Clay', unit: '%' },
+    { search: ['stones', 'stone content'], standardName: 'Stone Content (>2mm)', unit: '%' },
+    { search: ['total nitrogen', 'nitrogen'], standardName: 'Nitrogen', unit: '%' },
+    { search: ['phosphorus'], standardName: 'Phosphorus', unit: 'mg/L' },
+    { search: ['potassium'], standardName: 'Potassium', unit: 'mg/L' },
+    { search: ['arsenic', 'as'], standardName: 'Arsenic', unit: 'mg/kg' },
+    { search: ['cadmium', 'cd'], standardName: 'Cadmium', unit: 'mg/kg' },
+    { search: ['chromium (vi)', 'cr(vi)', 'chromium vi'], standardName: 'Chromium (VI)', unit: 'mg/kg' },
+    { search: ['chromium', 'cr'], standardName: 'Chromium (Total)', unit: 'mg/kg' },
+    { search: ['copper', 'cu'], standardName: 'Copper', unit: 'mg/kg' },
+    { search: ['lead', 'pb'], standardName: 'Lead', unit: 'mg/kg' },
+    { search: ['mercury', 'hg'], standardName: 'Mercury', unit: 'mg/kg' },
+    { search: ['nickel', 'ni'], standardName: 'Nickel', unit: 'mg/kg' },
+    { search: ['selenium', 'se'], standardName: 'Selenium', unit: 'mg/kg' },
+    { search: ['zinc', 'zn'], standardName: 'Zinc', unit: 'mg/kg' },
+    { search: ['antimony', 'sb'], standardName: 'Antimony', unit: 'mg/kg' },
   ];
 
-  // Try each parameter pattern
-  for (const param of parameterPatterns) {
-    for (const pattern of param.patterns) {
-      const match = normalizedText.match(pattern);
-      if (match) {
-        const valueStr = match[1].trim();
-        let value: number | null = null;
+  // Look through each line for parameter names and extract values
+  for (const line of lines) {
+    const lineLower = line.toLowerCase();
 
-        if (valueStr.startsWith('<')) {
-          // Below detection limit
-          value = null;
-        } else if (valueStr.startsWith('>')) {
-          value = parseFloat(valueStr.substring(1));
-        } else {
-          value = parseFloat(valueStr);
-        }
+    // Skip empty lines and header lines
+    if (line.trim().length === 0 || lineLower.includes('parameter') && lineLower.includes('result')) {
+      continue;
+    }
 
-        if (value !== null && !isNaN(value)) {
-          parameters[param.standardName] = {
-            value,
-            unit: param.unit,
-            source: sourceLab,
-            date,
-          };
-        } else if (valueStr.startsWith('<')) {
-          parameters[param.standardName] = {
-            value: null,
-            unit: param.unit,
-            source: sourceLab,
-            date,
-          };
+    // Try to match each parameter
+    for (const param of parameterDefs) {
+      // Check if any search term appears in this line
+      const matchedTerm = param.search.find(term => lineLower.includes(term));
+
+      if (matchedTerm && !parameters[param.standardName]) {
+        // Found a parameter! Now extract the numeric value
+        // Look for patterns like: <0.5, >100, 12.5, 0.8, etc.
+        const valueMatch = line.match(/([<>]?\d+\.?\d*)/);
+
+        if (valueMatch) {
+          const valueStr = valueMatch[1];
+          let value: number | null = null;
+
+          if (valueStr.startsWith('<')) {
+            // Below detection limit
+            value = null;
+          } else if (valueStr.startsWith('>')) {
+            value = parseFloat(valueStr.substring(1));
+          } else {
+            value = parseFloat(valueStr);
+          }
+
+          // Only add if we got a valid number or null (for <LOD)
+          if (value !== null && !isNaN(value)) {
+            parameters[param.standardName] = {
+              value,
+              unit: param.unit,
+              source: sourceLab,
+              date,
+            };
+            break; // Found this parameter, move to next line
+          } else if (valueStr.startsWith('<')) {
+            parameters[param.standardName] = {
+              value: null,
+              unit: param.unit,
+              source: sourceLab,
+              date,
+            };
+            break;
+          }
         }
-        break; // Found this parameter, move to next
       }
     }
   }
