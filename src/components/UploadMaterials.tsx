@@ -210,6 +210,25 @@ export default function UploadMaterials({
                   {material.source && (
                     <p className="text-xs text-gray-500 mt-1 truncate">Source: {material.source}</p>
                   )}
+                  {Object.keys(material.parameters).length > 0 && (
+                    <details className="mt-2">
+                      <summary className="text-xs text-navy-600 cursor-pointer hover:text-navy-700 font-medium">
+                        View detected parameters
+                      </summary>
+                      <div className="mt-2 pl-3 border-l-2 border-navy-200">
+                        <ul className="text-xs text-gray-600 space-y-1">
+                          {Object.entries(material.parameters).map(([paramName, paramValue]) => (
+                            <li key={paramName} className="flex justify-between gap-2">
+                              <span className="font-medium">{paramName}:</span>
+                              <span>
+                                {paramValue.value !== null ? paramValue.value : '<RL'} {paramValue.unit}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </details>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
