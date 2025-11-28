@@ -175,10 +175,13 @@ export default function UploadMaterials({
 
         <div className="mt-4 flex justify-between items-center">
           <button
-            onClick={() => setShowManualEntry(true)}
+            onClick={() => {
+              setEditingMaterial(undefined);
+              setShowManualEntry(true);
+            }}
             className="text-sm text-navy-600 hover:text-navy-700 font-medium"
           >
-            + Manual Entry
+            + Add New Material
           </button>
 
           {materials.length > 0 && (
@@ -224,6 +227,16 @@ export default function UploadMaterials({
                   {material.source && (
                     <p className="text-xs text-gray-500 mt-1 truncate">Source: {material.source}</p>
                   )}
+
+                  <button
+                    onClick={() => handleEditMaterial(material)}
+                    className="mt-2 text-xs text-navy-600 hover:text-navy-700 font-medium underline"
+                  >
+                    {Object.keys(material.parameters).length > 0
+                      ? '✏️ Edit / Add missing parameters'
+                      : '✏️ Add parameters'}
+                  </button>
+
                   {Object.keys(material.parameters).length > 0 && (
                     <details className="mt-2">
                       <summary className="text-xs text-navy-600 cursor-pointer hover:text-navy-700 font-medium">
@@ -240,12 +253,6 @@ export default function UploadMaterials({
                             </li>
                           ))}
                         </ul>
-                        <button
-                          onClick={() => handleEditMaterial(material)}
-                          className="mt-3 text-xs text-navy-600 hover:text-navy-700 font-medium underline"
-                        >
-                          + Add missing parameters
-                        </button>
                       </div>
                     </details>
                   )}
