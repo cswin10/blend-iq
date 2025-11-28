@@ -84,6 +84,15 @@ export default function ConfigureOptimization({
     onConfigChange({ ...config, selectedParameters: newSelected });
   };
 
+  const selectAllParameters = () => {
+    const allParams = ALL_PARAMETERS.map((p) => p.name);
+    onConfigChange({ ...config, selectedParameters: allParams });
+  };
+
+  const deselectAllParameters = () => {
+    onConfigChange({ ...config, selectedParameters: [] });
+  };
+
   // Auto-select mandatory parameters on mount and scroll to top
   React.useEffect(() => {
     // Scroll to top when this component loads
@@ -345,6 +354,20 @@ export default function ConfigureOptimization({
               <p className="text-sm text-gray-600 mt-1">
                 Choose which parameters to include in the optimisation
               </p>
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={selectAllParameters}
+                  className="px-4 py-2 bg-navy-100 text-navy-700 rounded-lg hover:bg-navy-200 transition-colors text-sm font-medium"
+                >
+                  Select All Parameters
+                </button>
+                <button
+                  onClick={deselectAllParameters}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                >
+                  Deselect All Parameters
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6">
