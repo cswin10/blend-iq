@@ -26,11 +26,11 @@ export interface Parameter {
 }
 
 export type ParameterCategory =
-  | 'Physical'
-  | 'Chemical'
-  | 'Nutrients'
-  | 'Contaminants'
-  | 'Texture';
+  | 'Heavy Metal'
+  | 'PAH'
+  | 'TPH'
+  | 'BTEX'
+  | 'BS3882';
 
 // Optimization Configuration
 export interface OptimizationConfig {
