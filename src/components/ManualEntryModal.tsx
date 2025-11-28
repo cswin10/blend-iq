@@ -10,24 +10,30 @@ interface ManualEntryModalProps {
 
 // Typical topsoil values for quick testing/demo
 const TYPICAL_TOPSOIL_VALUES: Record<string, number> = {
+  // BS3882 Parameters
   'pH': 6.5,
-  'Stone Content (>2mm)': 4,
-  'Organic Matter': 6,
-  'Clay': 20,
-  'Silt': 40,
-  'Sand': 40,
-  'Nitrogen (Total)': 2000,
-  'Phosphorus (Available)': 25,
-  'Potassium (Available)': 150,
-  'Magnesium (Available)': 80,
-  'Arsenic': 10,
-  'Cadmium': 0.5,
-  'Chromium (Total)': 30,
-  'Copper': 20,
-  'Lead': 50,
-  'Mercury': 0.1,
-  'Nickel': 15,
-  'Zinc': 50,
+  'SOM': 7,
+  'Moisture Content': 20,
+  'Clay content': 20,
+  'Silt content': 40,
+  'Sand content': 40,
+  '>2mm': 5,
+  '>20mm': 2,
+  'Total nitrogen': 0.4,
+  'Phosphate': 50,
+  'Potassium': 200,
+  'Magnesium': 100,
+  'Electrical Conductivity': 1000,
+
+  // Heavy Metals
+  'Arsenic (As)': 10,
+  'Cadmium (Cd)': 0.5,
+  'Chromium (Cr)': 30,
+  'Copper (Cu)': 20,
+  'Lead (Pb)': 50,
+  'Mercury (Hg)': 0.1,
+  'Nickel (Ni)': 15,
+  'Zinc (Zn)': 50,
 };
 
 export default function ManualEntryModal({ onClose, onSave }: ManualEntryModalProps) {

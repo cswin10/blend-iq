@@ -1,93 +1,84 @@
 import { Parameter, StandardLimits } from './types';
 
-// All 71 parameters grouped by category
+// All parameters based on S4UL, C4UL, and BS3882 standards
 export const ALL_PARAMETERS: Parameter[] = [
-  // Physical Properties
-  { name: 'pH', category: 'Physical', unit: '', lowerLimit: 5.5, upperLimit: 8.5, isMandatory: true },
-  { name: 'Stone Content (>2mm)', category: 'Physical', unit: '% w/w', upperLimit: 8, isMandatory: true },
-  { name: 'Stone Content (>10mm)', category: 'Physical', unit: '% w/w', upperLimit: 2 },
-  { name: 'Bulk Density', category: 'Physical', unit: 'g/cm³', lowerLimit: 0.9, upperLimit: 1.3 },
-  { name: 'Moisture Content', category: 'Physical', unit: '% w/w' },
-  { name: 'Water Holding Capacity', category: 'Physical', unit: '%' },
-  { name: 'Hydraulic Conductivity', category: 'Physical', unit: 'cm/s' },
+  // Heavy Metals
+  { name: 'Antimony (Sb)', category: 'Heavy Metal', unit: 'mg/kg', lowerLimit: 0, upperLimit: 999 },
+  { name: 'Arsenic (As)', category: 'Heavy Metal', unit: 'mg/kg', lowerLimit: 0, upperLimit: 37 },
+  { name: 'Cadmium (Cd)', category: 'Heavy Metal', unit: 'mg/kg', lowerLimit: 0, upperLimit: 11 },
+  { name: 'Chromium (Cr)', category: 'Heavy Metal', unit: 'mg/kg', lowerLimit: 0, upperLimit: 910 },
+  { name: 'Chromium (hexavalent)', category: 'Heavy Metal', unit: 'mg/kg', lowerLimit: 0, upperLimit: 6 },
+  { name: 'Copper (Cu)', category: 'Heavy Metal', unit: 'mg/kg', lowerLimit: 0, upperLimit: 135, isMandatory: true },
+  { name: 'Lead (Pb)', category: 'Heavy Metal', unit: 'mg/kg', lowerLimit: 0, upperLimit: 200 },
+  { name: 'Mercury (Hg)', category: 'Heavy Metal', unit: 'mg/kg', lowerLimit: 0, upperLimit: 11 },
+  { name: 'Nickel (Ni)', category: 'Heavy Metal', unit: 'mg/kg', lowerLimit: 0, upperLimit: 75, isMandatory: true },
+  { name: 'Selenium (Se)', category: 'Heavy Metal', unit: 'mg/kg', lowerLimit: 0, upperLimit: 250 },
+  { name: 'Zinc (Zn)', category: 'Heavy Metal', unit: 'mg/kg', lowerLimit: 0, upperLimit: 200, isMandatory: true },
 
-  // Texture (mandatory for compliance)
-  { name: 'Clay', category: 'Texture', unit: '% w/w', lowerLimit: 8, upperLimit: 35, isMandatory: true },
-  { name: 'Silt', category: 'Texture', unit: '% w/w', lowerLimit: 15, upperLimit: 60, isMandatory: true },
-  { name: 'Sand', category: 'Texture', unit: '% w/w', lowerLimit: 30, upperLimit: 60, isMandatory: true },
+  // Polycyclic Aromatic Hydrocarbons (PAHs)
+  { name: 'Naphthalene', category: 'PAH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 5.6 },
+  { name: 'Acenaphthylene', category: 'PAH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 420 },
+  { name: 'Acenaphthene', category: 'PAH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 510 },
+  { name: 'Fluorene', category: 'PAH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 400 },
+  { name: 'Phenanthrene', category: 'PAH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 220 },
+  { name: 'Anthracene', category: 'PAH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 5400 },
+  { name: 'Fluoranthene', category: 'PAH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 560 },
+  { name: 'Pyrene', category: 'PAH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 1200 },
+  { name: 'Benzo(a)anthracene', category: 'PAH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 13 },
+  { name: 'Chrysene', category: 'PAH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 22 },
+  { name: 'Benzo(b)fluoranthene', category: 'PAH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 3.3 },
+  { name: 'Benzo(k)fluoranthene', category: 'PAH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 93 },
+  { name: 'Benzo(a)pyrene', category: 'PAH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 2.7 },
+  { name: 'Indeno(1,2,3-cd)pyrene', category: 'PAH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 36 },
+  { name: 'Dibenz(a,h)anthracene', category: 'PAH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 0.28 },
+  { name: 'Benzo(g,h,i)perylene', category: 'PAH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 340 },
 
-  // Chemical Properties
-  { name: 'Organic Matter', category: 'Chemical', unit: '% w/w', lowerLimit: 3.5, upperLimit: 10, isMandatory: true },
-  { name: 'Total Organic Carbon', category: 'Chemical', unit: '% w/w' },
-  { name: 'Electrical Conductivity', category: 'Chemical', unit: 'dS/m', upperLimit: 2 },
-  { name: 'Carbonate Content', category: 'Chemical', unit: '% w/w', upperLimit: 5 },
-  { name: 'Soluble Salts', category: 'Chemical', unit: 'mg/l', upperLimit: 1500 },
-  { name: 'Cation Exchange Capacity', category: 'Chemical', unit: 'meq/100g' },
+  // Total Petroleum Hydrocarbons (TPH)
+  { name: 'Aliphatic >C5 - C6', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 78 },
+  { name: 'Aliphatic >C6 - C8', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 230 },
+  { name: 'Aliphatic >C8 - C10', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 65 },
+  { name: 'Aliphatic >C10 - C12', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 118 },
+  { name: 'Aliphatic >C12 - C16', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 59 },
+  { name: 'Aliphatic >C16 - C21', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 9999 },
+  { name: 'Aliphatic >C21 - C34', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 9999 },
+  { name: 'Aliphatic (C5 - C34)', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 9999 },
+  { name: 'Aliphatic >C16 - C35', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 92000 },
+  { name: 'Aromatic >C5 - C7', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 140 },
+  { name: 'Aromatic >C7 - C8', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 290 },
+  { name: 'Aromatic >C8 - C10', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 83 },
+  { name: 'Aromatic >C10 - C12', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 180 },
+  { name: 'Aromatic >C12 - C16', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 330 },
+  { name: 'Aromatic >C16 - C21', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 540 },
+  { name: 'Aromatic >C21 - C35', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 1500 },
+  { name: 'Aromatic (C5 - C35)', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 9999 },
+  { name: 'Total >C5 - C35', category: 'TPH', unit: 'mg/kg', lowerLimit: 0, upperLimit: 9999 },
 
-  // Nutrients
-  { name: 'Nitrogen (Total)', category: 'Nutrients', unit: 'mg/kg', lowerLimit: 100 },
-  { name: 'Phosphorus (Available)', category: 'Nutrients', unit: 'mg/kg', lowerLimit: 16 },
-  { name: 'Phosphorus (Total)', category: 'Nutrients', unit: 'mg/kg' },
-  { name: 'Potassium (Available)', category: 'Nutrients', unit: 'mg/kg', lowerLimit: 121 },
-  { name: 'Potassium (Total)', category: 'Nutrients', unit: 'mg/kg' },
-  { name: 'Magnesium (Available)', category: 'Nutrients', unit: 'mg/kg', lowerLimit: 50 },
-  { name: 'Magnesium (Total)', category: 'Nutrients', unit: 'mg/kg' },
-  { name: 'Calcium (Available)', category: 'Nutrients', unit: 'mg/kg' },
-  { name: 'Calcium (Total)', category: 'Nutrients', unit: 'mg/kg' },
-  { name: 'Sulphur', category: 'Nutrients', unit: 'mg/kg' },
+  // BTEX
+  { name: 'Benzene', category: 'BTEX', unit: 'µg/kg', lowerLimit: 0, upperLimit: 0.17 },
+  { name: 'Toluene', category: 'BTEX', unit: 'µg/kg', lowerLimit: 0, upperLimit: 290 },
+  { name: 'Ethylbenzene', category: 'BTEX', unit: 'µg/kg', lowerLimit: 0, upperLimit: 110 },
+  { name: 'p & m-xylene', category: 'BTEX', unit: 'µg/kg', lowerLimit: 0, upperLimit: 140 },
+  { name: 'o-xylene', category: 'BTEX', unit: 'µg/kg', lowerLimit: 0, upperLimit: 130 },
+  { name: 'MTBE', category: 'BTEX', unit: 'µg/kg', lowerLimit: 0, upperLimit: 84 },
 
-  // Heavy Metals (Contaminants) - pH dependent for some
-  { name: 'Arsenic', category: 'Contaminants', unit: 'mg/kg', upperLimit: 20, isMandatory: true },
-  { name: 'Cadmium', category: 'Contaminants', unit: 'mg/kg', upperLimit: 3, isMandatory: true },
-  { name: 'Chromium (Total)', category: 'Contaminants', unit: 'mg/kg', upperLimit: 100, isMandatory: true },
-  { name: 'Chromium (VI)', category: 'Contaminants', unit: 'mg/kg', upperLimit: 1 },
-  { name: 'Copper', category: 'Contaminants', unit: 'mg/kg', upperLimit: 200, isMandatory: true }, // pH dependent
-  { name: 'Lead', category: 'Contaminants', unit: 'mg/kg', upperLimit: 450, isMandatory: true },
-  { name: 'Mercury', category: 'Contaminants', unit: 'mg/kg', upperLimit: 1, isMandatory: true },
-  { name: 'Nickel', category: 'Contaminants', unit: 'mg/kg', upperLimit: 75, isMandatory: true }, // pH dependent
-  { name: 'Zinc', category: 'Contaminants', unit: 'mg/kg', upperLimit: 300, isMandatory: true }, // pH dependent
-  { name: 'Selenium', category: 'Contaminants', unit: 'mg/kg', upperLimit: 3 },
-  { name: 'Molybdenum', category: 'Contaminants', unit: 'mg/kg', upperLimit: 4 },
-  { name: 'Boron (Water Soluble)', category: 'Contaminants', unit: 'mg/kg', upperLimit: 3 },
-  { name: 'Boron (Total)', category: 'Contaminants', unit: 'mg/kg' },
-
-  // Organic Contaminants
-  { name: 'TPH (Total Petroleum Hydrocarbons)', category: 'Contaminants', unit: 'mg/kg', upperLimit: 500 },
-  { name: 'TPH C5-C6', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'TPH C6-C8', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'TPH C8-C10', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'TPH C10-C12', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'TPH C12-C16', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'TPH C16-C21', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'TPH C21-C35', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'TPH C35-C44', category: 'Contaminants', unit: 'mg/kg' },
-
-  // PAHs (Polycyclic Aromatic Hydrocarbons)
-  { name: 'PAH (Total)', category: 'Contaminants', unit: 'mg/kg', upperLimit: 50 },
-  { name: 'Naphthalene', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Acenaphthylene', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Acenaphthene', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Fluorene', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Phenanthrene', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Anthracene', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Fluoranthene', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Pyrene', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Benzo(a)anthracene', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Chrysene', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Benzo(b)fluoranthene', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Benzo(k)fluoranthene', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Benzo(a)pyrene', category: 'Contaminants', unit: 'mg/kg', upperLimit: 1 },
-  { name: 'Indeno(1,2,3-cd)pyrene', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Dibenz(a,h)anthracene', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Benzo(g,h,i)perylene', category: 'Contaminants', unit: 'mg/kg' },
-
-  // Other Organics
-  { name: 'PCBs (Total)', category: 'Contaminants', unit: 'mg/kg', upperLimit: 0.5 },
-  { name: 'Phenols (Total)', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Cyanide (Free)', category: 'Contaminants', unit: 'mg/kg', upperLimit: 1 },
-  { name: 'Cyanide (Complex)', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Cyanide (Total)', category: 'Contaminants', unit: 'mg/kg' },
-  { name: 'Asbestos', category: 'Contaminants', unit: 'presence', upperLimit: 0 },
+  // BS3882 Topsoil Parameters
+  { name: 'SOM', category: 'BS3882', unit: '%', lowerLimit: 5, upperLimit: 10, isMandatory: true },
+  { name: 'Moisture Content', category: 'BS3882', unit: '%', lowerLimit: 0, upperLimit: 100 },
+  { name: 'pH', category: 'BS3882', unit: 'pH units', lowerLimit: 5.5, upperLimit: 8.5, isMandatory: true },
+  { name: 'Clay content', category: 'BS3882', unit: '%', lowerLimit: 5, upperLimit: 35, isMandatory: true },
+  { name: 'Silt content', category: 'BS3882', unit: '%', lowerLimit: 0, upperLimit: 65, isMandatory: true },
+  { name: 'Sand content', category: 'BS3882', unit: '%', lowerLimit: 30, upperLimit: 85, isMandatory: true },
+  { name: 'Loss on Ignition', category: 'BS3882', unit: '%', lowerLimit: 5, upperLimit: 20 },
+  { name: '>2mm', category: 'BS3882', unit: '%', lowerLimit: 0, upperLimit: 30, isMandatory: true },
+  { name: '>20mm', category: 'BS3882', unit: '%', lowerLimit: 0, upperLimit: 10 },
+  { name: '>50mm', category: 'BS3882', unit: '%', lowerLimit: 0, upperLimit: 0.00001 },
+  { name: 'Carbonate', category: 'BS3882', unit: '%', lowerLimit: 0, upperLimit: 1 },
+  { name: 'Total nitrogen', category: 'BS3882', unit: '%', lowerLimit: 0.15, upperLimit: 1 },
+  { name: 'Phosphate', category: 'BS3882', unit: 'mg/L', lowerLimit: 16, upperLimit: 140 },
+  { name: 'Potassium', category: 'BS3882', unit: 'mg/L', lowerLimit: 121, upperLimit: 1500 },
+  { name: 'Magnesium', category: 'BS3882', unit: 'mg/L', lowerLimit: 51, upperLimit: 600 },
+  { name: 'C:N', category: 'BS3882', unit: ':1', lowerLimit: 0, upperLimit: 20 },
+  { name: 'Electrical Conductivity', category: 'BS3882', unit: 'uS/cm', lowerLimit: 0, upperLimit: 3300 },
 ];
 
 // BS3882:2015 Standard Limits
@@ -172,11 +163,11 @@ export const SOIL_TEXTURE_ACCEPTABLE_RANGE = {
 
 // Parameter categories for grouping
 export const PARAMETER_CATEGORIES = [
-  'Physical',
-  'Chemical',
-  'Nutrients',
-  'Contaminants',
-  'Texture',
+  'Heavy Metal',
+  'PAH',
+  'TPH',
+  'BTEX',
+  'BS3882',
 ] as const;
 
 // Default tolerance for optimization
