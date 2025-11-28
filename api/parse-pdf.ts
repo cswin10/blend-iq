@@ -113,26 +113,93 @@ function extractMaterialData(text: string, filename: string): Material {
   // Parameter definitions: search terms and standard names
   // IMPORTANT: Order matters! More specific terms first to avoid false matches
   const parameterDefs = [
-    { search: ['chromium (vi)', 'chromium vi', 'cr(vi)', 'cr vi'], standardName: 'Chromium (VI)', unit: 'mg/kg' },
-    { search: ['chromium (total)', 'chromium total', 'total chromium', 'chromium', 'cr'], standardName: 'Chromium (Total)', unit: 'mg/kg' },
-    { search: ['stone content', 'stones >2mm', 'stones (>2mm)', 'stones'], standardName: 'Stone Content (>2mm)', unit: '%' },
-    { search: ['soil organic matter', 'organic matter', 'som'], standardName: 'Organic Matter', unit: '%' },
-    { search: ['total nitrogen', 'nitrogen (total)'], standardName: 'Nitrogen', unit: '%' },
-    { search: ['clay (<', 'clay %', 'clay'], standardName: 'Clay', unit: '%' },
-    { search: ['silt (', 'silt %', 'silt'], standardName: 'Silt', unit: '%' },
-    { search: ['total sand', 'sand (', 'sand %', 'sand'], standardName: 'Sand', unit: '%' },
+    // Physical Properties
     { search: ['ph (', 'ph'], standardName: 'pH', unit: '' },
-    { search: ['phosphorus (p2o5)', 'phosphorus p2o5', 'extractable phosphorus', 'phosphorus'], standardName: 'Phosphorus', unit: 'mg/L' },
-    { search: ['potassium (k2o)', 'potassium k2o', 'extractable potassium', 'potassium'], standardName: 'Potassium', unit: 'mg/L' },
-    { search: ['total arsenic', 'arsenic (as)', 'arsenic'], standardName: 'Arsenic', unit: 'mg/kg' },
-    { search: ['total cadmium', 'cadmium (cd)', 'cadmium'], standardName: 'Cadmium', unit: 'mg/kg' },
-    { search: ['total copper', 'copper (cu)', 'copper'], standardName: 'Copper', unit: 'mg/kg' },
-    { search: ['total lead', 'lead (pb)', 'lead'], standardName: 'Lead', unit: 'mg/kg' },
-    { search: ['total mercury', 'mercury (hg)', 'mercury'], standardName: 'Mercury', unit: 'mg/kg' },
-    { search: ['total nickel', 'nickel (ni)', 'nickel'], standardName: 'Nickel', unit: 'mg/kg' },
-    { search: ['total selenium', 'selenium (se)', 'selenium'], standardName: 'Selenium', unit: 'mg/kg' },
-    { search: ['total zinc', 'zinc (zn)', 'zinc'], standardName: 'Zinc', unit: 'mg/kg' },
-    { search: ['total antimony', 'antimony (sb)', 'antimony'], standardName: 'Antimony', unit: 'mg/kg' },
+    { search: ['stone content (>10mm)', 'stones >10mm'], standardName: 'Stone Content (>10mm)', unit: '% w/w' },
+    { search: ['stone content', 'stones >2mm', 'stones (>2mm)', 'stone'], standardName: 'Stone Content (>2mm)', unit: '% w/w' },
+    { search: ['bulk density'], standardName: 'Bulk Density', unit: 'g/cm³' },
+    { search: ['moisture content', 'moisture'], standardName: 'Moisture Content', unit: '% w/w' },
+    { search: ['water holding capacity', 'whc'], standardName: 'Water Holding Capacity', unit: '%' },
+    { search: ['hydraulic conductivity'], standardName: 'Hydraulic Conductivity', unit: 'cm/s' },
+
+    // Texture
+    { search: ['clay (<', 'clay %', 'clay'], standardName: 'Clay', unit: '% w/w' },
+    { search: ['silt (', 'silt %', 'silt'], standardName: 'Silt', unit: '% w/w' },
+    { search: ['total sand', 'sand (', 'sand %', 'sand'], standardName: 'Sand', unit: '% w/w' },
+
+    // Chemical Properties
+    { search: ['soil organic matter', 'organic matter', 'som'], standardName: 'Organic Matter', unit: '% w/w' },
+    { search: ['total organic carbon', 'toc'], standardName: 'Total Organic Carbon', unit: '% w/w' },
+    { search: ['electrical conductivity', 'ec'], standardName: 'Electrical Conductivity', unit: 'dS/m' },
+    { search: ['carbonate content', 'carbonates'], standardName: 'Carbonate Content', unit: '% w/w' },
+    { search: ['soluble salts'], standardName: 'Soluble Salts', unit: 'mg/l' },
+    { search: ['cation exchange capacity', 'cec'], standardName: 'Cation Exchange Capacity', unit: 'meq/100g' },
+
+    // Nutrients
+    { search: ['nitrogen (total)', 'total nitrogen', 'nitrogen'], standardName: 'Nitrogen (Total)', unit: 'mg/kg' },
+    { search: ['phosphorus (available)', 'available phosphorus'], standardName: 'Phosphorus (Available)', unit: 'mg/kg' },
+    { search: ['phosphorus (total)', 'total phosphorus'], standardName: 'Phosphorus (Total)', unit: 'mg/kg' },
+    { search: ['potassium (available)', 'available potassium'], standardName: 'Potassium (Available)', unit: 'mg/kg' },
+    { search: ['potassium (total)', 'total potassium'], standardName: 'Potassium (Total)', unit: 'mg/kg' },
+    { search: ['magnesium (available)', 'available magnesium'], standardName: 'Magnesium (Available)', unit: 'mg/kg' },
+    { search: ['magnesium (total)', 'total magnesium'], standardName: 'Magnesium (Total)', unit: 'mg/kg' },
+    { search: ['calcium (available)', 'available calcium'], standardName: 'Calcium (Available)', unit: 'mg/kg' },
+    { search: ['calcium (total)', 'total calcium'], standardName: 'Calcium (Total)', unit: 'mg/kg' },
+    { search: ['sulphur'], standardName: 'Sulphur', unit: 'mg/kg' },
+
+    // Heavy Metals - Most specific first
+    { search: ['chromium (hexavalent)', 'chromium (vi)', 'chromium vi', 'cr(vi)', 'cr vi', 'hexavalent chromium'], standardName: 'Chromium (VI)', unit: 'mg/kg' },
+    { search: ['chromium (total)', 'chromium total', 'total chromium', 'chromium (cr)', 'chromium'], standardName: 'Chromium (Total)', unit: 'mg/kg' },
+    { search: ['antimony (sb)', 'antimony', 'sb'], standardName: 'Antimony', unit: 'mg/kg' },
+    { search: ['arsenic (as)', 'arsenic', 'as'], standardName: 'Arsenic', unit: 'mg/kg' },
+    { search: ['cadmium (cd)', 'cadmium', 'cd'], standardName: 'Cadmium', unit: 'mg/kg' },
+    { search: ['copper (cu)', 'copper', 'cu'], standardName: 'Copper', unit: 'mg/kg' },
+    { search: ['lead (pb)', 'lead', 'pb'], standardName: 'Lead', unit: 'mg/kg' },
+    { search: ['mercury (hg)', 'mercury', 'hg'], standardName: 'Mercury', unit: 'mg/kg' },
+    { search: ['nickel (ni)', 'nickel', 'ni'], standardName: 'Nickel', unit: 'mg/kg' },
+    { search: ['selenium (se)', 'selenium', 'se'], standardName: 'Selenium', unit: 'mg/kg' },
+    { search: ['zinc (zn)', 'zinc', 'zn'], standardName: 'Zinc', unit: 'mg/kg' },
+    { search: ['molybdenum (mo)', 'molybdenum', 'mo'], standardName: 'Molybdenum', unit: 'mg/kg' },
+    { search: ['boron (water soluble)', 'water soluble boron', 'boron - water soluble'], standardName: 'Boron (Water Soluble)', unit: 'mg/kg' },
+    { search: ['boron (total)', 'total boron'], standardName: 'Boron (Total)', unit: 'mg/kg' },
+
+    // TPH - Total Petroleum Hydrocarbons
+    { search: ['total petroleum hydrocarbons', 'tph (total)', 'tph total', 'tph >c5'], standardName: 'TPH (Total Petroleum Hydrocarbons)', unit: 'mg/kg' },
+    { search: ['aliphatic >c5 - c6', 'tph c5-c6', 'c5-c6'], standardName: 'TPH C5-C6', unit: 'mg/kg' },
+    { search: ['aliphatic >c6 - c8', 'tph c6-c8', 'c6-c8'], standardName: 'TPH C6-C8', unit: 'mg/kg' },
+    { search: ['aliphatic >c8 - c10', 'tph c8-c10', 'c8-c10'], standardName: 'TPH C8-C10', unit: 'mg/kg' },
+    { search: ['aliphatic >c10 - c12', 'tph c10-c12', 'c10-c12'], standardName: 'TPH C10-C12', unit: 'mg/kg' },
+    { search: ['aliphatic >c12 - c16', 'tph c12-c16', 'c12-c16'], standardName: 'TPH C12-C16', unit: 'mg/kg' },
+    { search: ['aliphatic >c16 - c21', 'tph c16-c21', 'c16-c21'], standardName: 'TPH C16-C21', unit: 'mg/kg' },
+    { search: ['aliphatic >c21 - c34', 'aliphatic >c21 - c35', 'tph c21-c35', 'c21-c35'], standardName: 'TPH C21-C35', unit: 'mg/kg' },
+    { search: ['tph c35-c44', 'c35-c44'], standardName: 'TPH C35-C44', unit: 'mg/kg' },
+
+    // PAHs - Polycyclic Aromatic Hydrocarbons
+    { search: ['**total epa-16 pahs', 'total epa-16', 'pah (total)', 'total pah'], standardName: 'PAH (Total)', unit: 'mg/kg' },
+    { search: ['naphthalene'], standardName: 'Naphthalene', unit: 'mg/kg' },
+    { search: ['acenaphthylene'], standardName: 'Acenaphthylene', unit: 'mg/kg' },
+    { search: ['acenaphthene'], standardName: 'Acenaphthene', unit: 'mg/kg' },
+    { search: ['fluorene'], standardName: 'Fluorene', unit: 'mg/kg' },
+    { search: ['phenanthrene'], standardName: 'Phenanthrene', unit: 'mg/kg' },
+    { search: ['anthracene'], standardName: 'Anthracene', unit: 'mg/kg' },
+    { search: ['fluoranthene'], standardName: 'Fluoranthene', unit: 'mg/kg' },
+    { search: ['pyrene'], standardName: 'Pyrene', unit: 'mg/kg' },
+    { search: ['benzo(a)anthracene', 'benz(a)anthracene'], standardName: 'Benzo(a)anthracene', unit: 'mg/kg' },
+    { search: ['chrysene'], standardName: 'Chrysene', unit: 'mg/kg' },
+    { search: ['benzo(b)fluoranthene'], standardName: 'Benzo(b)fluoranthene', unit: 'mg/kg' },
+    { search: ['benzo(k)fluoranthene'], standardName: 'Benzo(k)fluoranthene', unit: 'mg/kg' },
+    { search: ['benzo(a)pyrene'], standardName: 'Benzo(a)pyrene', unit: 'mg/kg' },
+    { search: ['indeno(1,2,3-cd)pyrene'], standardName: 'Indeno(1,2,3-cd)pyrene', unit: 'mg/kg' },
+    { search: ['dibenz(a,h)anthracene'], standardName: 'Dibenz(a,h)anthracene', unit: 'mg/kg' },
+    { search: ['benzo(g,h,i)perylene', 'benzo(ghi)perylene'], standardName: 'Benzo(g,h,i)perylene', unit: 'mg/kg' },
+
+    // Other Organics
+    { search: ['pcbs (total)', 'total pcbs', 'pcb'], standardName: 'PCBs (Total)', unit: 'mg/kg' },
+    { search: ['phenols (total)', 'total phenols'], standardName: 'Phenols (Total)', unit: 'mg/kg' },
+    { search: ['cyanide (free)', 'free cyanide'], standardName: 'Cyanide (Free)', unit: 'mg/kg' },
+    { search: ['cyanide (complex)', 'complex cyanide'], standardName: 'Cyanide (Complex)', unit: 'mg/kg' },
+    { search: ['cyanide (total)', 'total cyanide'], standardName: 'Cyanide (Total)', unit: 'mg/kg' },
+    { search: ['asbestos screen', 'asbestos'], standardName: 'Asbestos', unit: 'presence' },
   ];
 
   // Split into lines for easier parsing
