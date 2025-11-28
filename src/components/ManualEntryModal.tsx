@@ -6,6 +6,7 @@ import { ALL_PARAMETERS, PARAMETER_CATEGORIES } from '../constants';
 interface ManualEntryModalProps {
   onClose: () => void;
   onSave: (material: Material) => void;
+  existingMaterial?: Material; // Optional - for editing existing materials
 }
 
 // Typical topsoil values for quick testing/demo
@@ -36,12 +37,22 @@ const TYPICAL_TOPSOIL_VALUES: Record<string, number> = {
   'Zinc (Zn)': 50,
 };
 
-export default function ManualEntryModal({ onClose, onSave }: ManualEntryModalProps) {
-  const [materialName, setMaterialName] = useState('');
-  const [availableTonnage, setAvailableTonnage] = useState<number>(0);
+export default function ManualEntryModal({ onClose, onSave, existingMaterial }: ManualEntryModalProps) {
+  const [materialName, setMaterialName] = useState(existingMaterial?.name || '');
+  const [availableTonnage, setAvailableTonnage] = useState<number>(existingMaterial?.availableTonnage || 0);
   const [showOnlyKeyParams, setShowOnlyKeyParams] = useState(false);
-  const [parameterValues, setParameterValues] = useState<Record<string, ParameterValue>>({});
-  const [parameterSources, setParameterSources] = useState<Record<string, string>>({});
+  const [parameterValues, setParameterValues] = useState<Record<string, ParameterValue>>(existingMaterial?.parameters || {});
+  const [parameterSources, setParameterSources] = useState<Record<string, string>>(() => {
+    const sources: Record<string, string> = {};
+    if (existingMaterial?.parameters) {
+      Object.entries(existingMaterial.parameters).forEach(([key, value]) => {
+        if (value.source) {
+          sources[key] = value.source;
+        }
+      });
+    }
+    return sources;
+  });
   const [errors, setErrors] = useState<string[]>([]);
 
   // Filter parameters based on toggle
@@ -155,17 +166,17 @@ export default function ManualEntryModal({ onClose, onSave }: ManualEntryModalPr
       return;
     }
 
-    // Create and save material
-    const newMaterial: Material = {
-      id: `mat-${Date.now()}-manual`,
+    // Create or update material
+    const material: Material = {
+      id: existingMaterial?.id || `mat-${Date.now()}-manual`,
       name: materialName.trim(),
       availableTonnage,
       parameters: parameterValues,
-      source: 'Manual Entry',
-      date: new Date().toISOString(),
+      source: existingMaterial?.source || 'Manual Entry',
+      date: existingMaterial?.date || new Date().toISOString(),
     };
 
-    onSave(newMaterial);
+    onSave(material);
   };
 
   return (
@@ -174,9 +185,14 @@ export default function ManualEntryModal({ onClose, onSave }: ManualEntryModalPr
         {/* Header */}
         <div className="flex items-start justify-between p-4 sm:p-6 border-b border-gray-200">
           <div className="flex-1 pr-4">
-            <h2 className="text-xl sm:text-2xl font-bold text-navy-700">Manual Material Entry</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-navy-700">
+              {existingMaterial ? 'Add Missing Parameters' : 'Manual Material Entry'}
+            </h2>
             <p className="text-xs sm:text-sm text-gray-600 mt-1">
-              Enter material data manually when lab reports are unavailable
+              {existingMaterial
+                ? `Fill in missing parameters for ${existingMaterial.name}`
+                : 'Enter material data manually when lab reports are unavailable'
+              }
             </p>
           </div>
           <button
@@ -275,20 +291,30 @@ export default function ManualEntryModal({ onClose, onSave }: ManualEntryModalPr
                       <tbody className="divide-y divide-gray-200">
                         {params.map(param => {
                           const currentValue = parameterValues[param.name];
+                          const isDetected = existingMaterial?.parameters[param.name] !== undefined;
                           return (
-                            <tr key={param.name} className="hover:bg-gray-50">
+                            <tr key={param.name} className={`hover:bg-gray-50 ${isDetected ? 'bg-green-50' : ''}`}>
                               <td className="px-4 py-3 text-sm text-gray-900">
-                                {param.name}
-                                {param.isMandatory && (
-                                  <span className="ml-1 text-red-500" title="Required parameter">*</span>
-                                )}
-                                {(param.lowerLimit !== undefined || param.upperLimit !== undefined) && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {param.lowerLimit !== undefined && `Min: ${param.lowerLimit}`}
-                                    {param.lowerLimit !== undefined && param.upperLimit !== undefined && ' | '}
-                                    {param.upperLimit !== undefined && `Max: ${param.upperLimit}`}
+                                <div className="flex items-center gap-2">
+                                  {isDetected && (
+                                    <span title="Detected from upload">
+                                      <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                    </span>
+                                  )}
+                                  <div>
+                                    {param.name}
+                                    {param.isMandatory && (
+                                      <span className="ml-1 text-red-500" title="Required parameter">*</span>
+                                    )}
+                                    {(param.lowerLimit !== undefined || param.upperLimit !== undefined) && (
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        {param.lowerLimit !== undefined && `Min: ${param.lowerLimit}`}
+                                        {param.lowerLimit !== undefined && param.upperLimit !== undefined && ' | '}
+                                        {param.upperLimit !== undefined && `Max: ${param.upperLimit}`}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
+                                </div>
                               </td>
                               <td className="px-4 py-3">
                                 <input
@@ -323,14 +349,22 @@ export default function ManualEntryModal({ onClose, onSave }: ManualEntryModalPr
                   <div className="md:hidden divide-y divide-gray-200">
                     {params.map(param => {
                       const currentValue = parameterValues[param.name];
+                      const isDetected = existingMaterial?.parameters[param.name] !== undefined;
                       return (
-                        <div key={param.name} className="p-4 space-y-3">
+                        <div key={param.name} className={`p-4 space-y-3 ${isDetected ? 'bg-green-50' : ''}`}>
                           <div>
-                            <label className="block text-sm font-medium text-gray-900 mb-1">
-                              {param.name}
-                              {param.isMandatory && (
-                                <span className="ml-1 text-red-500" title="Required parameter">*</span>
+                            <label className="flex items-center gap-2 text-sm font-medium text-gray-900 mb-1">
+                              {isDetected && (
+                                <span title="Detected from upload">
+                                  <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                </span>
                               )}
+                              <span>
+                                {param.name}
+                                {param.isMandatory && (
+                                  <span className="ml-1 text-red-500" title="Required parameter">*</span>
+                                )}
+                              </span>
                             </label>
                             {(param.lowerLimit !== undefined || param.upperLimit !== undefined) && (
                               <div className="text-xs text-gray-500 mb-2">

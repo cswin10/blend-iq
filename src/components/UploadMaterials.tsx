@@ -18,6 +18,7 @@ export default function UploadMaterials({
 }: UploadMaterialsProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [editingMaterial, setEditingMaterial] = useState<Material | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,11 +108,24 @@ export default function UploadMaterials({
   };
 
   const handleSaveManualMaterial = (material: Material) => {
-    onMaterialsChange([...materials, material]);
+    if (editingMaterial) {
+      // Update existing material
+      onMaterialsChange(materials.map((m) => (m.id === material.id ? material : m)));
+    } else {
+      // Add new material
+      onMaterialsChange([...materials, material]);
+    }
     setShowManualEntry(false);
+    setEditingMaterial(undefined);
   };
 
-  const canProceed = materials.length >= 2 && materials.every((m) => m.availableTonnage > 0);
+  const handleEditMaterial = (material: Material) => {
+    setEditingMaterial(material);
+    setShowManualEntry(true);
+  };
+
+  // Tonnage is optional - just need 2+ materials to proceed
+  const canProceed = materials.length >= 2;
   const detectedParams = materials.length > 0 ? countDetectedParameters(materials) : 0;
 
   return (
@@ -226,6 +240,12 @@ export default function UploadMaterials({
                             </li>
                           ))}
                         </ul>
+                        <button
+                          onClick={() => handleEditMaterial(material)}
+                          className="mt-3 text-xs text-navy-600 hover:text-navy-700 font-medium underline"
+                        >
+                          + Add missing parameters
+                        </button>
                       </div>
                     </details>
                   )}
@@ -287,8 +307,12 @@ export default function UploadMaterials({
       {/* Manual Entry Modal */}
       {showManualEntry && (
         <ManualEntryModal
-          onClose={() => setShowManualEntry(false)}
+          onClose={() => {
+            setShowManualEntry(false);
+            setEditingMaterial(undefined);
+          }}
           onSave={handleSaveManualMaterial}
+          existingMaterial={editingMaterial}
         />
       )}
     </div>
