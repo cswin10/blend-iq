@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
-import { Upload, FileText, Trash2, CheckCircle, AlertCircle, Loader } from 'lucide-react';
-import { Material } from '../types';
+import React, { useState, useEffect } from 'react';
+import { Upload, FileText, Trash2, CheckCircle, AlertCircle, Loader, Download, Briefcase, FileSpreadsheet } from 'lucide-react';
+import { Material, Job } from '../types';
 import { parseCSV, countDetectedParameters } from '../utils/csvParser';
 import { ALL_PARAMETERS } from '../constants';
+import { downloadCSVTemplate } from '../utils/csvTemplate';
+import { getCurrentJob, saveJob, setCurrentJob } from '../utils/jobStorage';
 import ManualEntryModal from './ManualEntryModal';
+import JobManagementModal from './JobManagementModal';
 
 interface UploadMaterialsProps {
   materials: Material[];
@@ -18,8 +21,41 @@ export default function UploadMaterials({
 }: UploadMaterialsProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [showJobModal, setShowJobModal] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+  const [currentJob, setCurrentJobState] = useState<Job | null>(null);
+
+  // Load current job on mount
+  useEffect(() => {
+    const job = getCurrentJob();
+    if (job) {
+      setCurrentJobState(job);
+      onMaterialsChange(job.materials);
+    } else {
+      // No job exists - show job creation modal
+      setShowJobModal(true);
+    }
+  }, []);
+
+  // Save materials to job whenever they change
+  useEffect(() => {
+    if (currentJob) {
+      const updatedJob = {
+        ...currentJob,
+        materials,
+      };
+      saveJob(updatedJob);
+      setCurrentJobState(updatedJob);
+    }
+  }, [materials]);
+
+  const handleCreateJob = (job: Job) => {
+    setCurrentJob(job.id);
+    saveJob(job);
+    setCurrentJobState(job);
+    setShowJobModal(false);
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -130,11 +166,56 @@ export default function UploadMaterials({
 
   return (
     <div className="max-w-4xl mx-auto slide-in">
+      {/* Job Header */}
+      {currentJob && (
+        <div className="mb-6 p-4 bg-navy-50 border-2 border-navy-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Briefcase className="w-5 h-5 text-navy-600" />
+              <div>
+                <h2 className="font-bold text-navy-700">{currentJob.jobTitle}</h2>
+                <p className="text-sm text-gray-600">
+                  Code: {currentJob.jobCode} | Date: {currentJob.date} | {currentJob.initials}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowJobModal(true)}
+              className="text-xs text-navy-600 hover:text-navy-700 font-medium underline"
+            >
+              Change Job
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-navy-700 mb-2">Upload Materials</h1>
         <p className="text-sm sm:text-base text-gray-600">
-          Upload PDFs or CSVs of laboratory reports to begin optimising your soil blend.
+          Upload CSV files with laboratory report data to begin optimising your soil blend.
         </p>
+      </div>
+
+      {/* CSV Template Download */}
+      <div className="card mb-6 bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-200">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <FileSpreadsheet className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
+            <div>
+              <h3 className="font-semibold text-navy-700 mb-1">CSV Template (Recommended)</h3>
+              <p className="text-sm text-gray-600">
+                Download our CSV template for accurate, predictable data entry. Fill in your lab results and upload.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => downloadCSVTemplate()}
+            className="btn btn-primary flex items-center gap-2 whitespace-nowrap"
+          >
+            <Download className="w-4 h-4" />
+            Download Template
+          </button>
+        </div>
       </div>
 
       {/* Upload Area */}
@@ -159,7 +240,11 @@ export default function UploadMaterials({
                 <p className="mb-2 text-sm text-navy-600">
                   <span className="font-semibold">Click to upload</span> or drag and drop
                 </p>
-                <p className="text-xs text-gray-500">PDF or CSV files (multiple files supported)</p>
+                <p className="text-xs text-gray-500">
+                  <span className="font-semibold text-green-600">CSV (Recommended)</span> or{' '}
+                  <span className="text-amber-600">PDF (Experimental - may miss parameters)</span>
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Multiple files supported</p>
               </>
             )}
           </div>
@@ -320,6 +405,19 @@ export default function UploadMaterials({
           }}
           onSave={handleSaveManualMaterial}
           existingMaterial={editingMaterial}
+        />
+      )}
+
+      {/* Job Management Modal */}
+      {showJobModal && (
+        <JobManagementModal
+          onClose={() => {
+            // Only allow closing if a job exists
+            if (currentJob) {
+              setShowJobModal(false);
+            }
+          }}
+          onCreateJob={handleCreateJob}
         />
       )}
     </div>

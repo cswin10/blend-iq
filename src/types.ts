@@ -132,3 +132,28 @@ export interface ExportData {
   exportDate: string;
   version: string;
 }
+
+// Job Management Types
+export interface Job {
+  id: string;
+  jobTitle: string;
+  jobCode: string;
+  date: string;
+  initials: string;
+  createdAt: string;
+  updatedAt: string;
+  materials: Material[];
+  config?: OptimizationConfig;
+  result?: OptimizationResult;
+}
+
+export interface JobMetadata {
+  id: string;
+  jobTitle: string;
+  jobCode: string;
+  date: string;
+  initials: string;
+  createdAt: string;
+  updatedAt: string;
+  materialCount: number;
+}
