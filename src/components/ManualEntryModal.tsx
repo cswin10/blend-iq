@@ -132,17 +132,19 @@ export default function ManualEntryModal({ onClose, onSave, existingMaterial }: 
       newErrors.push('Available tonnage must be greater than 0');
     }
 
-    // Check for missing mandatory parameters
-    const missingMandatory = ALL_PARAMETERS
-      .filter(p => p.isMandatory)
-      .filter(p => !parameterValues[p.name] || parameterValues[p.name].value === null)
-      .map(p => p.name);
+    // NOTE: Removed mandatory parameter check - real-world lab reports often only test for specific parameters
+    // Users can enter partial data as long as they have at least one parameter
 
-    if (missingMandatory.length > 0) {
-      newErrors.push(`Missing required parameters: ${missingMandatory.join(', ')}`);
+    // Check that at least one parameter is entered
+    const enteredParams = Object.entries(parameterValues).filter(
+      ([_, value]) => value.value !== null
+    );
+
+    if (enteredParams.length === 0) {
+      newErrors.push('Please enter at least one parameter value');
     }
 
-    // Validate parameter values
+    // Validate parameter values (only for parameters that have been entered)
     Object.entries(parameterValues).forEach(([paramName, paramValue]) => {
       const param = ALL_PARAMETERS.find(p => p.name === paramName);
       if (param && paramValue.value !== null) {
@@ -151,12 +153,15 @@ export default function ManualEntryModal({ onClose, onSave, existingMaterial }: 
           newErrors.push(`${paramName} cannot be negative`);
         }
 
-        // Check against limits
+        // Check against limits (warnings, not errors - allow users to proceed)
+        // This validation is informational only
         if (param.lowerLimit !== undefined && paramValue.value < param.lowerLimit) {
-          newErrors.push(`${paramName} (${paramValue.value}) is below minimum limit (${param.lowerLimit})`);
+          // Just a warning, don't block submission
+          console.warn(`${paramName} (${paramValue.value}) is below minimum limit (${param.lowerLimit})`);
         }
         if (param.upperLimit !== undefined && paramValue.value > param.upperLimit) {
-          newErrors.push(`${paramName} (${paramValue.value}) exceeds maximum limit (${param.upperLimit})`);
+          // Just a warning, don't block submission
+          console.warn(`${paramName} (${paramValue.value}) exceeds maximum limit (${param.upperLimit})`);
         }
       }
     });
@@ -166,12 +171,20 @@ export default function ManualEntryModal({ onClose, onSave, existingMaterial }: 
       return;
     }
 
+    // Filter out null/empty parameters before saving
+    const filteredParameters: Record<string, ParameterValue> = {};
+    Object.entries(parameterValues).forEach(([key, value]) => {
+      if (value.value !== null) {
+        filteredParameters[key] = value;
+      }
+    });
+
     // Create or update material
     const material: Material = {
       id: existingMaterial?.id || `mat-${Date.now()}-manual`,
       name: materialName.trim(),
       availableTonnage,
-      parameters: parameterValues,
+      parameters: filteredParameters, // Only include parameters with values
       source: existingMaterial?.source || 'Manual Entry',
       date: existingMaterial?.date || new Date().toISOString(),
     };
