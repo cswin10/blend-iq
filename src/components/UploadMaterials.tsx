@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Upload, FileText, Trash2, CheckCircle, AlertCircle, Loader, Download, Briefcase, FileSpreadsheet, FolderOpen } from 'lucide-react';
 import { Material, Job } from '../types';
 import { parseCSV, countDetectedParameters } from '../utils/csvParser';
+import { parseExcel } from '../utils/excelParser';
 import { ALL_PARAMETERS } from '../constants';
-import { downloadCSVTemplate } from '../utils/csvTemplate';
+import { downloadExcelTemplate } from '../utils/excelTemplate';
 import { getCurrentJob, saveJob, setCurrentJob, getJob } from '../utils/jobStorage';
 import ManualEntryModal from './ManualEntryModal';
 import JobManagementModal from './JobManagementModal';
@@ -77,6 +78,15 @@ export default function UploadMaterials({
           // Parse PDF using serverless API with pdf-parse library
           const pdfMaterial = await parsePDF(file);
           newMaterials.push(pdfMaterial);
+        } else if (
+          file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+          file.type === 'application/vnd.ms-excel' ||
+          file.name.endsWith('.xlsx') ||
+          file.name.endsWith('.xls')
+        ) {
+          // Parse Excel
+          const excelMaterials = await parseExcel(file);
+          newMaterials.push(...excelMaterials);
         } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
           // Parse CSV
           const csvMaterials = await parseCSV(file);
@@ -229,24 +239,24 @@ export default function UploadMaterials({
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-navy-700 mb-2">Upload Materials</h1>
         <p className="text-sm sm:text-base text-gray-600">
-          Upload CSV files with laboratory report data to begin optimising your soil blend.
+          Upload Excel or CSV files with laboratory report data to begin optimising your soil blend.
         </p>
       </div>
 
-      {/* CSV Template Download */}
+      {/* Excel Template Download */}
       <div className="card mb-6 bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-200">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
             <FileSpreadsheet className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
             <div>
-              <h3 className="font-semibold text-navy-700 mb-1">CSV Template (Recommended)</h3>
+              <h3 className="font-semibold text-navy-700 mb-1">Excel Template (Recommended)</h3>
               <p className="text-sm text-gray-600">
-                Download our CSV template for accurate, predictable data entry. Fill in your lab results and upload.
+                Download our styled Excel template for multiple samples. Organized by category with color-coding for easy data entry.
               </p>
             </div>
           </div>
           <button
-            onClick={() => downloadCSVTemplate()}
+            onClick={() => downloadExcelTemplate()}
             className="btn btn-primary flex items-center gap-2 whitespace-nowrap"
           >
             <Download className="w-4 h-4" />
@@ -278,7 +288,7 @@ export default function UploadMaterials({
                   <span className="font-semibold">Click to upload</span> or drag and drop
                 </p>
                 <p className="text-xs text-gray-500">
-                  <span className="font-semibold text-green-600">CSV (Recommended)</span> or{' '}
+                  <span className="font-semibold text-green-600">Excel/CSV (Recommended)</span> or{' '}
                   <span className="text-amber-600">PDF (Experimental - may miss parameters)</span>
                 </p>
                 <p className="text-xs text-gray-400 mt-1">Multiple files supported</p>
@@ -289,7 +299,7 @@ export default function UploadMaterials({
             type="file"
             className="hidden"
             multiple
-            accept=".pdf,.csv"
+            accept=".pdf,.csv,.xlsx,.xls"
             onChange={handleFileUpload}
             disabled={isUploading}
           />
