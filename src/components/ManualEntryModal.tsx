@@ -144,27 +144,10 @@ export default function ManualEntryModal({ onClose, onSave, existingMaterial }: 
       newErrors.push('Please enter at least one parameter value');
     }
 
-    // Validate parameter values (only for parameters that have been entered)
-    Object.entries(parameterValues).forEach(([paramName, paramValue]) => {
-      const param = ALL_PARAMETERS.find(p => p.name === paramName);
-      if (param && paramValue.value !== null) {
-        // Check for negative values in contaminants/physical properties
-        if (paramValue.value < 0 && param.name !== 'pH') {
-          newErrors.push(`${paramName} cannot be negative`);
-        }
-
-        // Check against limits (warnings, not errors - allow users to proceed)
-        // This validation is informational only
-        if (param.lowerLimit !== undefined && paramValue.value < param.lowerLimit) {
-          // Just a warning, don't block submission
-          console.warn(`${paramName} (${paramValue.value}) is below minimum limit (${param.lowerLimit})`);
-        }
-        if (param.upperLimit !== undefined && paramValue.value > param.upperLimit) {
-          // Just a warning, don't block submission
-          console.warn(`${paramName} (${paramValue.value}) exceeds maximum limit (${param.upperLimit})`);
-        }
-      }
-    });
+    // NOTE: No validation on parameter values
+    // The entire purpose of BlendIQ is to blend non-compliant materials to create compliant blends
+    // Input materials will often have contaminant levels that exceed screening values
+    // The optimization algorithm will find the right mix ratios to bring everything into compliance
 
     if (newErrors.length > 0) {
       setErrors(newErrors);
