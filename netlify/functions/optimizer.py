@@ -315,7 +315,11 @@ def calculate_blend_parameters(ratios: np.ndarray, material_params: Dict) -> Dic
 
 
 def calculate_residuals(blend_params: Dict, targets: Dict, limits: Dict, config: Dict) -> List[Dict]:
-    """Calculate residuals for each parameter"""
+    """Calculate residuals for each parameter
+
+    Residual % is now calculated based on how far outside the acceptable range
+    the value is, relative to the range size. Values within range = 0% residual.
+    """
     residuals = []
     tolerance = config.get('tolerance', 30)
 
@@ -326,20 +330,47 @@ def calculate_residuals(blend_params: Dict, targets: Dict, limits: Dict, config:
         lower = param_limits.get('lower')
         upper = param_limits.get('upper')
 
-        # Calculate residual
-        if lower is not None and blend_value < lower:
-            residual = blend_value - lower
-        elif upper is not None and blend_value > upper:
-            residual = blend_value - upper
+        # Calculate residual and residual percentage
+        # Residual % is based on distance from acceptable range, not target
+        if lower is not None and upper is not None:
+            # Has both limits - calculate based on range
+            range_size = upper - lower if upper != lower else 1
+            if blend_value < lower:
+                residual = blend_value - lower
+                residual_percent = abs(residual / range_size) * 100
+            elif blend_value > upper:
+                residual = blend_value - upper
+                residual_percent = abs(residual / range_size) * 100
+            else:
+                # Within range - 0% residual (compliant)
+                residual = 0
+                residual_percent = 0
+        elif lower is not None:
+            # Only lower limit (e.g., minimum nitrogen)
+            if blend_value < lower:
+                residual = blend_value - lower
+                residual_percent = abs(residual / lower) * 100 if lower != 0 else abs(residual) * 100
+            else:
+                residual = 0
+                residual_percent = 0
+        elif upper is not None:
+            # Only upper limit (e.g., contaminants)
+            if blend_value > upper:
+                residual = blend_value - upper
+                residual_percent = abs(residual / upper) * 100 if upper != 0 else abs(residual) * 100
+            else:
+                residual = 0
+                residual_percent = 0
         else:
+            # No limits defined - compare to target
             residual = blend_value - target
+            residual_percent = abs(residual / target) * 100 if target != 0 else 0
 
-        residual_percent = abs(residual / (target if target != 0 else 1)) * 100
-
-        # Determine status
-        if residual_percent <= tolerance:
+        # Determine status based on residual percentage
+        # 0% = within limits, >0% = outside limits by that percentage of the range
+        if residual_percent == 0:
             status = 'compliant'
-        elif residual_percent <= tolerance * 1.5:
+        elif residual_percent <= tolerance:
             status = 'marginal'
         else:
             status = 'exceeding'
@@ -364,7 +395,11 @@ def calculate_residuals(blend_params: Dict, targets: Dict, limits: Dict, config:
 def build_result(success: bool, ratios: np.ndarray, materials: List[Dict],
                 residuals: List[Dict], blend_params: Dict, iterations: int,
                 convergence: bool, relaxed_tolerance: float, config: Dict) -> Dict:
-    """Build the optimization result dictionary"""
+    """Build the optimization result dictionary
+
+    Note: success is now based on compliance (no exceeding parameters),
+    not just optimizer convergence.
+    """
 
     # Blend ratios
     blend_ratios = {materials[i]['id']: float(ratios[i]) for i in range(len(materials))}
@@ -394,6 +429,10 @@ def build_result(success: bool, ratios: np.ndarray, materials: List[Dict],
     mean_residual = np.mean([abs(r['residualPercent']) for r in residuals]) if residuals else 0
     highest_residual = max([abs(r['residualPercent']) for r in residuals]) if residuals else 0
     lowest_residual = min([abs(r['residualPercent']) for r in residuals]) if residuals else 0
+
+    # Success is based on actual compliance, not just optimizer convergence
+    # A blend is successful if there are no exceeding parameters
+    blend_success = exceeding == 0 and len(residuals) > 0
 
     compliance = {
         'totalParameters': len(residuals),
@@ -451,7 +490,7 @@ def build_result(success: bool, ratios: np.ndarray, materials: List[Dict],
                        (f' and {len(missing_params) - 5} more' if len(missing_params) > 5 else ''))
 
     return {
-        'success': success,
+        'success': blend_success,
         'blendRatios': blend_ratios,
         'tonnageBreakdown': tonnage_breakdown,
         'compliance': compliance,

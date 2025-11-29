@@ -187,9 +187,11 @@ export default function ConfigureOptimization({
             <div>
               <p className="font-medium mb-1">What does tolerance mean?</p>
               <p className="text-gray-600">
-                Tolerance controls how precisely the blend must match your target values.
-                <span className="font-medium"> Lower values (15-30%)</span> require very strict compliance—ideal for sensitive projects.
-                <span className="font-medium"> Higher values (60-100%)</span> allow more flexibility—useful when exact matches are difficult.
+                Tolerance defines the acceptable deviation from compliance limits.
+                <span className="font-medium"> Values within limits</span> = Compliant (0% residual).
+                <span className="font-medium"> Values outside limits by up to {config.tolerance}%</span> of the range = Marginal.
+                <span className="font-medium"> Values exceeding {config.tolerance}%</span> = Exceeding (blend fails).
+                Lower tolerance is stricter; higher tolerance allows more deviation outside limits.
               </p>
             </div>
           </div>
