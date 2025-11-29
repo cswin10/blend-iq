@@ -132,46 +132,42 @@ export default function ManualEntryModal({ onClose, onSave, existingMaterial }: 
       newErrors.push('Available tonnage must be greater than 0');
     }
 
-    // Check for missing mandatory parameters
-    const missingMandatory = ALL_PARAMETERS
-      .filter(p => p.isMandatory)
-      .filter(p => !parameterValues[p.name] || parameterValues[p.name].value === null)
-      .map(p => p.name);
+    // NOTE: Removed mandatory parameter check - real-world lab reports often only test for specific parameters
+    // Users can enter partial data as long as they have at least one parameter
 
-    if (missingMandatory.length > 0) {
-      newErrors.push(`Missing required parameters: ${missingMandatory.join(', ')}`);
+    // Check that at least one parameter is entered
+    const enteredParams = Object.entries(parameterValues).filter(
+      ([_, value]) => value.value !== null
+    );
+
+    if (enteredParams.length === 0) {
+      newErrors.push('Please enter at least one parameter value');
     }
 
-    // Validate parameter values
-    Object.entries(parameterValues).forEach(([paramName, paramValue]) => {
-      const param = ALL_PARAMETERS.find(p => p.name === paramName);
-      if (param && paramValue.value !== null) {
-        // Check for negative values in contaminants/physical properties
-        if (paramValue.value < 0 && param.name !== 'pH') {
-          newErrors.push(`${paramName} cannot be negative`);
-        }
-
-        // Check against limits
-        if (param.lowerLimit !== undefined && paramValue.value < param.lowerLimit) {
-          newErrors.push(`${paramName} (${paramValue.value}) is below minimum limit (${param.lowerLimit})`);
-        }
-        if (param.upperLimit !== undefined && paramValue.value > param.upperLimit) {
-          newErrors.push(`${paramName} (${paramValue.value}) exceeds maximum limit (${param.upperLimit})`);
-        }
-      }
-    });
+    // NOTE: No validation on parameter values
+    // The entire purpose of BlendIQ is to blend non-compliant materials to create compliant blends
+    // Input materials will often have contaminant levels that exceed screening values
+    // The optimization algorithm will find the right mix ratios to bring everything into compliance
 
     if (newErrors.length > 0) {
       setErrors(newErrors);
       return;
     }
 
+    // Filter out null/empty parameters before saving
+    const filteredParameters: Record<string, ParameterValue> = {};
+    Object.entries(parameterValues).forEach(([key, value]) => {
+      if (value.value !== null) {
+        filteredParameters[key] = value;
+      }
+    });
+
     // Create or update material
     const material: Material = {
       id: existingMaterial?.id || `mat-${Date.now()}-manual`,
       name: materialName.trim(),
       availableTonnage,
-      parameters: parameterValues,
+      parameters: filteredParameters, // Only include parameters with values
       source: existingMaterial?.source || 'Manual Entry',
       date: existingMaterial?.date || new Date().toISOString(),
     };
