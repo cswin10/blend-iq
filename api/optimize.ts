@@ -376,8 +376,23 @@ function calculateObjective(
     }
 
     const paramLimits = limits[paramName] || {};
-    const lower = paramLimits.lower;
-    const upper = paramLimits.upper;
+
+    // Apply tolerance to make limits STRICTER (narrower range for safety margin)
+    let lower = paramLimits.lower;
+    let upper = paramLimits.upper;
+
+    if (lower !== undefined && upper !== undefined) {
+      // Both limits exist - shrink range from both ends
+      const range = upper - lower;
+      lower = lower + (range * tolerance); // Move lower limit UP
+      upper = upper - (range * tolerance); // Move upper limit DOWN
+    } else if (upper !== undefined) {
+      // Only upper limit (contaminants) - reduce it
+      upper = upper * (1 - tolerance);
+    } else if (lower !== undefined) {
+      // Only lower limit - increase it
+      lower = lower * (1 + tolerance);
+    }
 
     let safeDivisor: number;
     let residual: number;
@@ -509,61 +524,87 @@ function calculateResiduals(
   status: string;
 }> {
   const residuals: Array<any> = [];
-  const tolerance = config.tolerance || 30;
+  const tolerancePct = config.tolerance || 30;
+  const tolerance = tolerancePct / 100;
 
   for (const [paramName, blendValue] of Object.entries(blendParams)) {
     const target = targets[paramName] || 0;
     const paramLimits = limits[paramName] || {};
-    const lower = paramLimits.lower;
-    const upper = paramLimits.upper;
+
+    // Apply tolerance to make limits STRICTER (narrower range for safety margin)
+    let lower = paramLimits.lower;
+    let upper = paramLimits.upper;
+    const originalLower = lower;
+    const originalUpper = upper;
+
+    if (lower !== undefined && upper !== undefined) {
+      // Both limits exist - shrink range from both ends
+      const range = upper - lower;
+      lower = lower + (range * tolerance); // Move lower limit UP
+      upper = upper - (range * tolerance); // Move upper limit DOWN
+    } else if (upper !== undefined) {
+      // Only upper limit (contaminants) - reduce it
+      upper = upper * (1 - tolerance);
+    } else if (lower !== undefined) {
+      // Only lower limit - increase it
+      lower = lower * (1 + tolerance);
+    }
 
     let residual: number;
     let safeDivisor: number;
+    let status: string;
 
+    // Check compliance against ADJUSTED (stricter) limits
     if (lower !== undefined && blendValue < lower) {
-      // Below lower limit - calculate how far below
+      // Below adjusted lower limit - EXCEEDING (not safe)
       residual = blendValue - lower;
-      safeDivisor = Math.abs(lower) > 1e-10 ? Math.abs(lower) : 1.0;
+      safeDivisor = Math.abs(originalLower || lower) > 1e-10 ? Math.abs(originalLower || lower) : 1.0;
+
+      // Check if it's between original and adjusted limit (marginal zone)
+      if (originalLower !== undefined && blendValue >= originalLower) {
+        status = 'marginal'; // Within legal limit but not safety margin
+      } else {
+        status = 'exceeding'; // Outside even the legal limit
+      }
     } else if (upper !== undefined && blendValue > upper) {
-      // Above upper limit - calculate how far above
+      // Above adjusted upper limit - EXCEEDING (not safe)
       residual = blendValue - upper;
-      safeDivisor = Math.abs(upper) > 1e-10 ? Math.abs(upper) : 1.0;
+      safeDivisor = Math.abs(originalUpper || upper) > 1e-10 ? Math.abs(originalUpper || upper) : 1.0;
+
+      // Check if it's between adjusted and original limit (marginal zone)
+      if (originalUpper !== undefined && blendValue <= originalUpper) {
+        status = 'marginal'; // Within legal limit but not safety margin
+      } else {
+        status = 'exceeding'; // Outside even the legal limit
+      }
     } else {
-      // Within acceptable range
+      // Within adjusted limits - COMPLIANT (safe)
       residual = blendValue - target;
 
-      // For parameters with upper limit only (heavy metals), use upper limit as divisor
-      // This prevents huge residual percentages when target is 0
-      if (upper !== undefined && lower === undefined && Math.abs(target) < 1e-10) {
-        safeDivisor = Math.abs(upper);
-      } else if (lower !== undefined && upper !== undefined) {
-        // For range parameters, use range width
-        safeDivisor = Math.abs(upper - lower);
+      // For parameters with upper limit only (heavy metals), use original upper limit as divisor
+      if (originalUpper !== undefined && originalLower === undefined && Math.abs(target) < 1e-10) {
+        safeDivisor = Math.abs(originalUpper);
+      } else if (originalLower !== undefined && originalUpper !== undefined) {
+        // For range parameters, use original range width
+        safeDivisor = Math.abs(originalUpper - originalLower);
       } else {
         safeDivisor = Math.abs(target) > 1e-10 ? Math.abs(target) : 1.0;
       }
+
+      status = 'compliant'; // Within safety margin
     }
 
     const residualPercent = Math.abs(residual / safeDivisor) * 100;
 
-    let status: string;
-    if (residualPercent <= tolerance) {
-      status = 'compliant';
-    } else if (residualPercent <= tolerance * 1.5) {
-      status = 'marginal';
-    } else {
-      status = 'exceeding';
-    }
-
     residuals.push({
       parameter: paramName,
       value: blendValue,
-      lowerLimit: lower,
-      upperLimit: upper,
+      lowerLimit: originalLower, // Show original screening value
+      upperLimit: originalUpper, // Show original screening value
       target,
       residual,
       residualPercent,
-      status,
+      status, // Status is based on adjusted (stricter) limits
       category: getParameterCategory(paramName),
       unit: 'mg/kg', // Default unit, could be enhanced to be parameter-specific
     });

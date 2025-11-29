@@ -6,6 +6,8 @@ export interface Material {
   parameters: Record<string, ParameterValue>;
   source?: string;
   date?: string;
+  labNumber?: string; // Lab report number
+  labTitle?: string;  // Lab report title
 }
 
 export interface ParameterValue {
@@ -131,4 +133,29 @@ export interface ExportData {
   result: OptimizationResult;
   exportDate: string;
   version: string;
+}
+
+// Job Management Types
+export interface Job {
+  id: string;
+  jobTitle: string;
+  jobCode: string;
+  date: string;
+  initials: string;
+  createdAt: string;
+  updatedAt: string;
+  materials: Material[];
+  config?: OptimizationConfig;
+  result?: OptimizationResult;
+}
+
+export interface JobMetadata {
+  id: string;
+  jobTitle: string;
+  jobCode: string;
+  date: string;
+  initials: string;
+  createdAt: string;
+  updatedAt: string;
+  materialCount: number;
 }

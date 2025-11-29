@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
-import { Upload, FileText, Trash2, CheckCircle, AlertCircle, Loader } from 'lucide-react';
-import { Material } from '../types';
+import React, { useState, useEffect } from 'react';
+import { Upload, FileText, Trash2, CheckCircle, AlertCircle, Loader, Download, Briefcase, FileSpreadsheet, FolderOpen } from 'lucide-react';
+import { Material, Job } from '../types';
 import { parseCSV, countDetectedParameters } from '../utils/csvParser';
 import { ALL_PARAMETERS } from '../constants';
+import { downloadCSVTemplate } from '../utils/csvTemplate';
+import { getCurrentJob, saveJob, setCurrentJob, getJob } from '../utils/jobStorage';
 import ManualEntryModal from './ManualEntryModal';
+import JobManagementModal from './JobManagementModal';
+import MaterialLabelingModal from './MaterialLabelingModal';
+import JobListModal from './JobListModal';
 
 interface UploadMaterialsProps {
   materials: Material[];
@@ -18,8 +23,44 @@ export default function UploadMaterials({
 }: UploadMaterialsProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [showJobModal, setShowJobModal] = useState(false);
+  const [showJobListModal, setShowJobListModal] = useState(false);
+  const [showLabelingModal, setShowLabelingModal] = useState(false);
+  const [pendingMaterials, setPendingMaterials] = useState<Material[]>([]);
   const [editingMaterial, setEditingMaterial] = useState<Material | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+  const [currentJob, setCurrentJobState] = useState<Job | null>(null);
+
+  // Load current job on mount
+  useEffect(() => {
+    const job = getCurrentJob();
+    if (job) {
+      setCurrentJobState(job);
+      onMaterialsChange(job.materials);
+    } else {
+      // No job exists - show job creation modal
+      setShowJobModal(true);
+    }
+  }, []);
+
+  // Save materials to job whenever they change
+  useEffect(() => {
+    if (currentJob) {
+      const updatedJob = {
+        ...currentJob,
+        materials,
+      };
+      saveJob(updatedJob);
+      setCurrentJobState(updatedJob);
+    }
+  }, [materials]);
+
+  const handleCreateJob = (job: Job) => {
+    setCurrentJob(job.id);
+    saveJob(job);
+    setCurrentJobState(job);
+    setShowJobModal(false);
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -45,7 +86,9 @@ export default function UploadMaterials({
         }
       }
 
-      onMaterialsChange([...materials, ...newMaterials]);
+      // Show labeling modal instead of directly adding materials
+      setPendingMaterials(newMaterials);
+      setShowLabelingModal(true);
     } catch (err: any) {
       setError(err.message || 'Failed to parse files');
       console.error('Upload error:', err);
@@ -53,6 +96,27 @@ export default function UploadMaterials({
       setIsUploading(false);
       // Reset input
       event.target.value = '';
+    }
+  };
+
+  const handleConfirmLabeling = (labeledMaterials: Material[]) => {
+    onMaterialsChange([...materials, ...labeledMaterials]);
+    setShowLabelingModal(false);
+    setPendingMaterials([]);
+  };
+
+  const handleCancelLabeling = () => {
+    setShowLabelingModal(false);
+    setPendingMaterials([]);
+  };
+
+  const handleOpenJob = (jobId: string) => {
+    const job = getJob(jobId);
+    if (job) {
+      setCurrentJob(jobId);
+      setCurrentJobState(job);
+      onMaterialsChange(job.materials);
+      setShowJobListModal(false);
     }
   };
 
@@ -130,11 +194,65 @@ export default function UploadMaterials({
 
   return (
     <div className="max-w-4xl mx-auto slide-in">
+      {/* Job Header */}
+      {currentJob && (
+        <div className="mb-6 p-4 bg-navy-50 border-2 border-navy-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Briefcase className="w-5 h-5 text-navy-600" />
+              <div>
+                <h2 className="font-bold text-navy-700">{currentJob.jobTitle}</h2>
+                <p className="text-sm text-gray-600">
+                  Code: {currentJob.jobCode} | Date: {currentJob.date} | {currentJob.initials}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowJobListModal(true)}
+                className="flex items-center gap-2 px-3 py-1.5 text-xs text-navy-600 hover:text-navy-700 hover:bg-navy-100 rounded-lg transition-colors font-medium"
+              >
+                <FolderOpen className="w-4 h-4" />
+                View All Jobs
+              </button>
+              <button
+                onClick={() => setShowJobModal(true)}
+                className="text-xs text-navy-600 hover:text-navy-700 font-medium underline"
+              >
+                New Job
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-navy-700 mb-2">Upload Materials</h1>
         <p className="text-sm sm:text-base text-gray-600">
-          Upload PDFs or CSVs of laboratory reports to begin optimising your soil blend.
+          Upload CSV files with laboratory report data to begin optimising your soil blend.
         </p>
+      </div>
+
+      {/* CSV Template Download */}
+      <div className="card mb-6 bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-200">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <FileSpreadsheet className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
+            <div>
+              <h3 className="font-semibold text-navy-700 mb-1">CSV Template (Recommended)</h3>
+              <p className="text-sm text-gray-600">
+                Download our CSV template for accurate, predictable data entry. Fill in your lab results and upload.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => downloadCSVTemplate()}
+            className="btn btn-primary flex items-center gap-2 whitespace-nowrap"
+          >
+            <Download className="w-4 h-4" />
+            Download Template
+          </button>
+        </div>
       </div>
 
       {/* Upload Area */}
@@ -159,7 +277,11 @@ export default function UploadMaterials({
                 <p className="mb-2 text-sm text-navy-600">
                   <span className="font-semibold">Click to upload</span> or drag and drop
                 </p>
-                <p className="text-xs text-gray-500">PDF or CSV files (multiple files supported)</p>
+                <p className="text-xs text-gray-500">
+                  <span className="font-semibold text-green-600">CSV (Recommended)</span> or{' '}
+                  <span className="text-amber-600">PDF (Experimental - may miss parameters)</span>
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Multiple files supported</p>
               </>
             )}
           </div>
@@ -175,10 +297,13 @@ export default function UploadMaterials({
 
         <div className="mt-4 flex justify-between items-center">
           <button
-            onClick={() => setShowManualEntry(true)}
+            onClick={() => {
+              setEditingMaterial(undefined);
+              setShowManualEntry(true);
+            }}
             className="text-sm text-navy-600 hover:text-navy-700 font-medium"
           >
-            + Manual Entry
+            + Add New Material
           </button>
 
           {materials.length > 0 && (
@@ -224,6 +349,16 @@ export default function UploadMaterials({
                   {material.source && (
                     <p className="text-xs text-gray-500 mt-1 truncate">Source: {material.source}</p>
                   )}
+
+                  <button
+                    onClick={() => handleEditMaterial(material)}
+                    className="mt-2 text-xs text-navy-600 hover:text-navy-700 font-medium underline"
+                  >
+                    {Object.keys(material.parameters).length > 0
+                      ? '✏️ Edit / Add missing parameters'
+                      : '✏️ Add parameters'}
+                  </button>
+
                   {Object.keys(material.parameters).length > 0 && (
                     <details className="mt-2">
                       <summary className="text-xs text-navy-600 cursor-pointer hover:text-navy-700 font-medium">
@@ -240,12 +375,6 @@ export default function UploadMaterials({
                             </li>
                           ))}
                         </ul>
-                        <button
-                          onClick={() => handleEditMaterial(material)}
-                          className="mt-3 text-xs text-navy-600 hover:text-navy-700 font-medium underline"
-                        >
-                          + Add missing parameters
-                        </button>
                       </div>
                     </details>
                   )}
@@ -313,6 +442,42 @@ export default function UploadMaterials({
           }}
           onSave={handleSaveManualMaterial}
           existingMaterial={editingMaterial}
+        />
+      )}
+
+      {/* Job Management Modal */}
+      {showJobModal && (
+        <JobManagementModal
+          onClose={() => {
+            // Only allow closing if a job exists
+            if (currentJob) {
+              setShowJobModal(false);
+            }
+          }}
+          onCreateJob={handleCreateJob}
+        />
+      )}
+
+      {/* Material Labeling Modal */}
+      {showLabelingModal && currentJob && (
+        <MaterialLabelingModal
+          materials={pendingMaterials}
+          jobCode={currentJob.jobCode}
+          onConfirm={handleConfirmLabeling}
+          onCancel={handleCancelLabeling}
+        />
+      )}
+
+      {/* Job List Modal */}
+      {showJobListModal && (
+        <JobListModal
+          onClose={() => setShowJobListModal(false)}
+          onOpenJob={handleOpenJob}
+          onCreateNew={() => {
+            setShowJobListModal(false);
+            setShowJobModal(true);
+          }}
+          currentJobId={currentJob?.id}
         />
       )}
     </div>
