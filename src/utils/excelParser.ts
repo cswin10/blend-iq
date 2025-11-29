@@ -115,7 +115,8 @@ function extractMaterialsFromSheet(data: any[][]): Material[] {
       const date = row[valueColStart + 2]; // Date
 
       // Skip category headers and empty rows
-      if (!paramName || !value || value === '') continue;
+      // Note: value === 0 is valid (e.g., 0% for contaminants), so only skip undefined/null/empty string
+      if (!paramName || value === undefined || value === null || value === '') continue;
 
       // Find matching parameter in constants
       const paramDef = ALL_PARAMETERS.find(p => p.name === paramName);
