@@ -6,6 +6,8 @@ export interface Material {
   parameters: Record<string, ParameterValue>;
   source?: string;
   date?: string;
+  labNumber?: string; // Lab report number
+  labTitle?: string;  // Lab report title
 }
 
 export interface ParameterValue {

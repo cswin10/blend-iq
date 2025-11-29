@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, FileText, Trash2, CheckCircle, AlertCircle, Loader, Download, Briefcase, FileSpreadsheet } from 'lucide-react';
+import { Upload, FileText, Trash2, CheckCircle, AlertCircle, Loader, Download, Briefcase, FileSpreadsheet, FolderOpen } from 'lucide-react';
 import { Material, Job } from '../types';
 import { parseCSV, countDetectedParameters } from '../utils/csvParser';
 import { ALL_PARAMETERS } from '../constants';
 import { downloadCSVTemplate } from '../utils/csvTemplate';
-import { getCurrentJob, saveJob, setCurrentJob } from '../utils/jobStorage';
+import { getCurrentJob, saveJob, setCurrentJob, getJob } from '../utils/jobStorage';
 import ManualEntryModal from './ManualEntryModal';
 import JobManagementModal from './JobManagementModal';
+import MaterialLabelingModal from './MaterialLabelingModal';
+import JobListModal from './JobListModal';
 
 interface UploadMaterialsProps {
   materials: Material[];
@@ -22,6 +24,9 @@ export default function UploadMaterials({
   const [isUploading, setIsUploading] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [showJobModal, setShowJobModal] = useState(false);
+  const [showJobListModal, setShowJobListModal] = useState(false);
+  const [showLabelingModal, setShowLabelingModal] = useState(false);
+  const [pendingMaterials, setPendingMaterials] = useState<Material[]>([]);
   const [editingMaterial, setEditingMaterial] = useState<Material | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [currentJob, setCurrentJobState] = useState<Job | null>(null);
@@ -81,7 +86,9 @@ export default function UploadMaterials({
         }
       }
 
-      onMaterialsChange([...materials, ...newMaterials]);
+      // Show labeling modal instead of directly adding materials
+      setPendingMaterials(newMaterials);
+      setShowLabelingModal(true);
     } catch (err: any) {
       setError(err.message || 'Failed to parse files');
       console.error('Upload error:', err);
@@ -89,6 +96,27 @@ export default function UploadMaterials({
       setIsUploading(false);
       // Reset input
       event.target.value = '';
+    }
+  };
+
+  const handleConfirmLabeling = (labeledMaterials: Material[]) => {
+    onMaterialsChange([...materials, ...labeledMaterials]);
+    setShowLabelingModal(false);
+    setPendingMaterials([]);
+  };
+
+  const handleCancelLabeling = () => {
+    setShowLabelingModal(false);
+    setPendingMaterials([]);
+  };
+
+  const handleOpenJob = (jobId: string) => {
+    const job = getJob(jobId);
+    if (job) {
+      setCurrentJob(jobId);
+      setCurrentJobState(job);
+      onMaterialsChange(job.materials);
+      setShowJobListModal(false);
     }
   };
 
@@ -179,12 +207,21 @@ export default function UploadMaterials({
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => setShowJobModal(true)}
-              className="text-xs text-navy-600 hover:text-navy-700 font-medium underline"
-            >
-              Change Job
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowJobListModal(true)}
+                className="flex items-center gap-2 px-3 py-1.5 text-xs text-navy-600 hover:text-navy-700 hover:bg-navy-100 rounded-lg transition-colors font-medium"
+              >
+                <FolderOpen className="w-4 h-4" />
+                View All Jobs
+              </button>
+              <button
+                onClick={() => setShowJobModal(true)}
+                className="text-xs text-navy-600 hover:text-navy-700 font-medium underline"
+              >
+                New Job
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -418,6 +455,29 @@ export default function UploadMaterials({
             }
           }}
           onCreateJob={handleCreateJob}
+        />
+      )}
+
+      {/* Material Labeling Modal */}
+      {showLabelingModal && currentJob && (
+        <MaterialLabelingModal
+          materials={pendingMaterials}
+          jobCode={currentJob.jobCode}
+          onConfirm={handleConfirmLabeling}
+          onCancel={handleCancelLabeling}
+        />
+      )}
+
+      {/* Job List Modal */}
+      {showJobListModal && (
+        <JobListModal
+          onClose={() => setShowJobListModal(false)}
+          onOpenJob={handleOpenJob}
+          onCreateNew={() => {
+            setShowJobListModal(false);
+            setShowJobModal(true);
+          }}
+          currentJobId={currentJob?.id}
         />
       )}
     </div>
